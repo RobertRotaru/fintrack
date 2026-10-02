@@ -21,6 +21,8 @@ export interface GoalPlan {
   progress: number;
   done: boolean;
   required: { monthly: number; weekly: number; daysLeft: number } | null;
+  /** The deadline has passed and the goal isn't reached. */
+  overdue: boolean;
   /** ETA at the pace of the user's real contributions over the last 90 days. */
   actualPace: { monthly: number; eta: string | null } | null;
   plans: SavingPlan[];
@@ -42,7 +44,8 @@ export function goalPlan(goal: Pick<Goal, 'targetAmount' | 'saved' | 'deadline' 
   const daysLeft = deadline ? Math.max(0, diffDays(deadline, today)) : null;
 
   let required: GoalPlan['required'] = null;
-  if (deadline && daysLeft !== null) {
+  const overdue = !!deadline && deadline < parseDate(toISODate(today)) && remaining > 0;
+  if (deadline && daysLeft !== null && !overdue) {
     const monthsLeft = Math.max(daysLeft / 30.44, 1 / 30.44);
     required = {
       monthly: remaining / monthsLeft,
@@ -77,7 +80,8 @@ export function goalPlan(goal: Pick<Goal, 'targetAmount' | 'saved' | 'deadline' 
     templates.push({ id: 'deadline', label: 'Hit the deadline', description: 'Exactly what you need to save to reach it on time.', monthly: required.monthly });
   }
 
-  const plans = templates
+  // Nothing left to plan for a finished goal.
+  const plans = (remaining <= 0 ? [] : templates)
     .filter((t) => t.monthly > 0)
     .map((t) => {
       // The deadline plan is sized to land exactly on the deadline; don't let
@@ -93,5 +97,5 @@ export function goalPlan(goal: Pick<Goal, 'targetAmount' | 'saved' | 'deadline' 
       };
     });
 
-  return { remaining, progress, done: remaining <= 0, required, actualPace, plans };
+  return { remaining, progress, done: remaining <= 0, overdue, required, actualPace, plans };
 }
