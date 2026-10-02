@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@ft/core';
-import { api, getToken, setToken, setUnauthorizedHandler } from './api';
+import { ApiError, api, getToken, setToken, setUnauthorizedHandler } from './api';
 
 interface AuthState {
   user: User | null;
@@ -28,10 +28,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setUnauthorizedHandler(logout);
     if (!getToken()) return;
-    api<User>('/auth/me')
-      .then(setUser)
-      .catch(() => logout())
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    // Only a 401 ends the session; network errors (API restarting, offline)
+    // keep the token and retry instead of signing the user out.
+    const check = () =>
+      api<User>('/auth/me')
+        .then((u) => {
+          if (cancelled) return;
+          setUser(u);
+          setLoading(false);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          if (e instanceof ApiError && e.status === 401) {
+            logout();
+            setLoading(false);
+          } else timer = setTimeout(check, 2000);
+        });
+    check();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [logout]);
 
   const login = async (email: string, password: string) => {

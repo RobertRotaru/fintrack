@@ -199,6 +199,10 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
   }
 
   // ---- Step 3: personalise --------------------------------------------------
+  // Lead with the bank's brand colour and the account's current colour (custom or
+  // brand), so the selected swatch is always visible.
+  const lead = [d.institution?.color, account?.color].filter((c): c is string => !!c);
+  const swatches = [...new Set([...lead, ...PERSONAL_COLORS])].slice(0, 16);
   const preview = {
     name: d.name,
     type: d.type,
@@ -247,7 +251,7 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
       </Field>
 
       <Field label="Colour">
-        <ColorPicker value={d.color} onChange={(color) => set({ color })} colors={d.institution ? [d.institution.color, ...PERSONAL_COLORS.filter((c) => c !== d.institution!.color)].slice(0, 16) : PERSONAL_COLORS.slice(0, 16)} />
+        <ColorPicker value={d.color} onChange={(color) => set({ color })} colors={swatches} />
       </Field>
 
       <Field label="Icon">
