@@ -1,84 +1,104 @@
+<div align="center">
+
 # Fintrack
 
-Personal & family finance tracker. Web first (React), with the backend and business
-logic structured so a mobile app (React Native / Expo, separate project) can reuse them.
+**Know where every coin goes.**
 
-## Structure
+A personal & family finance tracker: accounts from your actual banks, two-tap expense entry,
+reports that explain themselves, goals with real ETAs, and an AI coach that reads your habits.
+
+![Fintrack home](docs/screenshots/home.jpg)
+
+</div>
+
+---
+
+## Highlights
+
+|  |  |
+|---|---|
+| ⚡ **Two taps to log a purchase** | Type the amount, tap a category — saved. Account and date are pre-filled, the most-used categories float to the top, and <kbd>N</kbd> opens it from anywhere. |
+| 🏦 **Your real banks** | Pick a country and choose from its banks, plus global neobanks, brokers and crypto exchanges — 16 countries and 120+ institutions, each with its logo and brand colour. |
+| 🎨 **Accounts that feel like yours** | Every account becomes a card: a suggested name ("Robert's ING Card"), brand colour, icon or your own photo, and a credit-limit meter. |
+| 📊 **Reports that explain themselves** | Monthly and yearly views with category breakdowns, spending pace vs last month, weekday patterns and like-for-like year-over-year comparisons. |
+| 💡 **Insights** | Thirteen kinds of observations — spending faster than last month, categories that jumped, savings-rate swings, streaks, recurring bills, unusual spends, weekend habits, wants vs needs. |
+| 🔮 **Projections** | Next months' income and spending from weighted history and trend, recurring payments detected automatically, a realistic end-of-month estimate and a six-month net-worth outlook. |
+| 🎯 **Goals with a route** | Save for a car, a house or a PS5: relaxed, balanced, ambitious and on-deadline plans with weekly and monthly amounts, an ETA from your actual saving pace, and a "what if I save X" calculator. |
+| 👨‍👩‍👧 **Family budgeting** | Invite your partner with a code, share only the accounts and goals you choose, and see who spent what. |
+| ✨ **AI investing coach** | An anonymised summary of your habits goes to Claude, which suggests readiness, a risk profile, an asset-class mix and next steps. Educational, not financial advice. |
+| 💱 **Live exchange rates** | Multi-currency accounts (including crypto) roll up into your main currency with daily rates. |
+
+## A closer look
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/reports-monthly.jpg" alt="Monthly report"><br><sub><b>Monthly report</b> — category donut with a full legend, cumulative spending pace against last month.</sub></td>
+    <td width="50%"><img src="docs/screenshots/reports-yearly.jpg" alt="Yearly report"><br><sub><b>Yearly report</b> — income vs expenses by month, stacked category spending, best and toughest months.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/insights.jpg" alt="Insights"><br><sub><b>Insights</b> — good news, heads-ups and habits, grouped and ranked by relevance.</sub></td>
+    <td><img src="docs/screenshots/projections.jpg" alt="Projections"><br><sub><b>Projections</b> — actual vs projected cash flow and where your net worth is heading.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/goal-plans.jpg" alt="Goal plans"><br><sub><b>Goal plans</b> — four ways to get there, each checked against your deadline and your monthly surplus.</sub></td>
+    <td><img src="docs/screenshots/family.jpg" alt="Family"><br><sub><b>Family</b> — members, invite code, shared accounts and who spent what this month.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/accounts.jpg" alt="Accounts"><br><sub><b>Accounts</b> — grouped by type, with assets, debts and net worth.</sub></td>
+    <td><img src="docs/screenshots/account-personalise.jpg" alt="Personalising an account"><br><sub><b>Personalisation</b> — live card preview, brand colour, icons and custom images.</sub></td>
+  </tr>
+</table>
+
+## How it's built
 
 ```
-finance-tracker/
-├─ packages/core/   Shared, dependency-free TypeScript: types, default categories,
-│                   banks by country, currency, reports, insights, projections,
-│                   goal plans, habit summary. Reuse it as-is in the mobile app.
-├─ server/          REST API — Express 5 + SQLite (node:sqlite), JWT auth,
-│                   family sharing, Claude-powered investing coach.
-└─ web/             React 19 + Vite + Tailwind 4 + Recharts + TanStack Query.
-                    Type: Bricolage Grotesque (headings, figures) + Figtree (body).
+fintrack/
+├─ packages/core   Shared, dependency-free TypeScript — the brains.
+│                  Reports, insights, projections, goal plans, habit summaries,
+│                  default categories, banks by country, currency conversion.
+├─ server          REST API — Express 5 + SQLite (node:sqlite), JWT auth,
+│                  family sharing, live FX, Claude-powered investing coach.
+└─ web             React 19 · Vite · Tailwind CSS 4 · Recharts · TanStack Query.
 ```
 
-## Run it
+The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app
+uses the exact same logic and the same API.
 
-Requires Node 22.13+ (uses the built-in `node:sqlite`).
+**Design notes**
 
-```bash
-npm install
-cp server/.env.example server/.env   # then set JWT_SECRET and (optionally) ANTHROPIC_API_KEY
-npm run dev                          # API on :4000, web on :5173
-```
+- **Type:** Bricolage Grotesque for headings and headline figures, Figtree for everything else, with tabular figures wherever amounts line up.
+- **Colour:** chart series use a colour-blind-safe palette validated in both light and dark themes. Good/bad states always come with an icon or label, never colour alone.
+- **Responsive:** sidebar on desktop; bottom navigation with a central add button on phones.
 
-Open http://localhost:5173, create an account, and either add your first account or
-click **Load a year of demo data** on the home screen.
+**Data & privacy**
 
-The SQLite database lives in `server/data/finance.db` (override with `DB_FILE`).
+- Family members only see what is explicitly shared, and only the person who added a transaction can edit or delete it.
+- The AI coach receives aggregates only — averages, category shares and balance totals. No names, notes or bank details.
+- Exchange rates come from [ExchangeRate-API](https://www.exchangerate-api.com) (fiat, daily) and Coinbase (crypto), cached server-side with an offline fallback.
 
-### Local test account
+## Default categories
 
-Used during development against the local dev server only:
+Built from the categories that recur across common budgeting frameworks (50/30/20, envelope budgeting) — fixed needs first, then variable needs, wants and obligations. All of them can be renamed, recoloured or archived, and users can add their own.
 
-- email: `dev@fintrack.test`
-- password: `fintrack-dev-2026`
-- partner (joined to the same family): `partner@fintrack.test`, same password
+- **Expenses:** Housing · Utilities · Internet & Phone · Insurance · Groceries · Transport · Fuel · Health · Kids · Pets · Education · Dining Out · Coffee & Snacks · Shopping · Entertainment · Subscriptions · Travel · Personal Care · Sports & Fitness · Gifts & Donations · Debt Payments · Taxes & Fees · Other
+- **Income:** Salary · Bonus · Freelance · Business · Investments · Interest · Rental · Benefits · Gifts · Refunds · Other
 
-## Features
+## API at a glance
 
-| # | Feature | Where |
-|---|---------|-------|
-| 1 | Accounts (debit, credit, savings, loan, investment, crypto, cash) with banks per country (16 countries + global neobanks/brokers/exchanges) and personalisation — suggested name, brand colour, icon, card image, live card preview | `AccountForm.tsx`, `core/institutions.ts` |
-| 2 | Expenses / income with 23 + 11 default categories (needs → wants → obligations, 50/30/20-style) and custom categories | `core/defaults.ts`, Settings |
-| 3 | Monthly & yearly reports — KPIs, category donut, spending pace, weekday, stacked category bars, YoY tables | `pages/Reports.tsx` |
-| 4 | Family — create/join with an invite code, share selected accounts & goals, member breakdown | `pages/Family.tsx`, `routes/household.ts` |
-| 5 | Projections — weighted averages + dampened trend, recurring-payment detection, 6-month net worth outlook | `core/projections.ts` |
-| 6 | Quick add in **2 steps** from home: type amount → tap category (account & date pre-filled; `N` opens it anywhere) | `components/QuickAdd.tsx` |
-| 7 | AI investing coach — anonymised habit summary → Claude → structured suggestions | `routes/ai.ts`, `pages/Invest.tsx` |
-| 8 | Goals — saving plans (relaxed/balanced/ambitious/deadline), weekly & monthly amounts, ETA from real pace, custom calculator | `core/goals.ts`, `pages/Goals.tsx` |
-| 9 | Insights — spending pace, category movers, income & savings-rate changes, streaks, recurring bills, unusual spends, weekend habits, wants vs needs… | `core/insights.ts` |
+All routes live under `/api` and speak JSON; everything except auth and FX needs a bearer token.
 
-Also: transfers between accounts (card repayments, moving money to savings) that change
-balances without counting as spending; light/dark theme; responsive mobile layout.
+| Area | Endpoints |
+|---|---|
+| Auth & profile | `POST /auth/register` · `POST /auth/login` · `GET/PATCH /auth/me` |
+| Money | `/accounts` · `/categories` · `/transactions` · `/transfers` (CRUD) |
+| Goals | `/goals` (CRUD) · `POST /goals/:id/contributions` |
+| Family | `GET/POST/PATCH /household` · `POST /household/join` · `/leave` · `/invite-code` · `DELETE /household/members/:id` |
+| Intelligence | `GET/POST /ai/investment` · `GET /fx` |
 
-## API
+## Roadmap
 
-All routes are under `/api`, JSON in/out, `Authorization: Bearer <token>` except auth.
-
-| Method | Path | |
-|---|---|---|
-| GET | `/fx` | live exchange rates (public) |
-| POST | `/auth/register`, `/auth/login` | returns `{ token, user }` |
-| GET/PATCH | `/auth/me` | profile, base currency, country |
-| GET/POST/PATCH/DELETE | `/accounts[/:id]` | balances computed server-side |
-| GET/POST/PATCH/DELETE | `/categories[/:id]` | delete archives if in use |
-| GET/POST/PATCH/DELETE | `/transactions[/:id]` | `?from&to&accountId` |
-| GET/POST/DELETE | `/transfers[/:id]` | |
-| GET/POST/PATCH/DELETE | `/goals[/:id]`, `POST /goals/:id/contributions` | |
-| GET/POST/PATCH | `/household`, `POST /household/join`, `/leave`, `/invite-code`, `DELETE /household/members/:id` | |
-| GET/POST | `/ai/investment` | latest advice / generate new |
-| POST | `/demo` | seeds 13 months of sample data into an empty profile |
-
-## Notes & next steps
-
-- **FX**: live rates, free and keyless — fiat from [ExchangeRate-API open access](https://www.exchangerate-api.com/docs/free)
-  (daily, attribution required and shown in Settings), crypto from Coinbase's public rates endpoint.
-  The server refreshes every 6 h (`server/src/fx.ts`), caches the last good set in SQLite, and falls back to
-  the static table in `core/currency.ts` if both sources are unreachable. Clients load them from `GET /api/fx`.
-- **Mobile**: point the Expo app at the same API and import `@ft/core` for all analytics.
-- **Later**: post-goal LLM buying suggestions; bank sync (PSD2/open banking); budgets per category; push notifications.
+- [ ] Mobile app (Expo / React Native) on the same API and `@ft/core`
+- [ ] Per-category monthly budgets with alerts
+- [ ] Bank sync via open banking (PSD2)
+- [ ] AI buying suggestions once a goal is reached
+- [ ] Push notifications for insights and goal milestones
