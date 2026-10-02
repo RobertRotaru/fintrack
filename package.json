@@ -1,0 +1,19 @@
+{
+  "name": "finance-tracker",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build -w web",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "concurrently": "^9.2.4",
+    "typescript": "^7.0.2"
+  }
+}

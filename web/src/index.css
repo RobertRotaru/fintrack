@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  color-scheme: light;
+  --bg: #f6f6f9;
+  --surface: #ffffff;
+  --surface-2: #f1f1f5;
+  --surface-3: #e7e7ee;
+  --line: #e4e4ec;
+  --ink: #0f1020;
+  --ink-2: #4a4b5e;
+  --muted: #8a8b9e;
+  --brand: #6366f1;
+  --brand-ink: #ffffff;
+  --brand-soft: #eef0ff;
+  /* chart series: validated categorical slots (aqua / orange / blue) */
+  --income: #1baf7a;
+  --expense: #eb6834;
+  --net: #2a78d6;
+  --grid: #ececf2;
+  /* status — reserved, always paired with an icon */
+  --good: #0f9f6e;
+  --good-soft: #e6f7f0;
+  --bad: #dc3d3d;
+  --bad-soft: #fdecec;
+  --warn: #c98500;
+  --shadow: 0 1px 2px rgb(15 16 32 / 0.04), 0 4px 16px rgb(15 16 32 / 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0b0b12;
+    --surface: #14141d;
+    --surface-2: #1b1b26;
+    --surface-3: #262633;
+    --line: #262633;
+    --ink: #f4f4f8;
+    --ink-2: #c3c3d1;
+    --muted: #82829a;
+    --brand: #818cf8;
+    --brand-ink: #0b0b12;
+    --brand-soft: #1e1f3a;
+    --income: #199e70;
+    --expense: #d95926;
+    --net: #3987e5;
+    --grid: #22222d;
+    --good: #34c38f;
+    --good-soft: #10291f;
+    --bad: #f06a6a;
+    --bad-soft: #2d1414;
+    --warn: #e0a028;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b0b12;
+  --surface: #14141d;
+  --surface-2: #1b1b26;
+  --surface-3: #262633;
+  --line: #262633;
+  --ink: #f4f4f8;
+  --ink-2: #c3c3d1;
+  --muted: #82829a;
+  --brand: #818cf8;
+  --brand-ink: #0b0b12;
+  --brand-soft: #1e1f3a;
+  --income: #199e70;
+  --expense: #d95926;
+  --net: #3987e5;
+  --grid: #22222d;
+  --good: #34c38f;
+  --good-soft: #10291f;
+  --bad: #f06a6a;
+  --bad-soft: #2d1414;
+  --warn: #e0a028;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+@theme inline {
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-net: var(--net);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Headings and headline figures get the display face; body copy stays in Figtree. */
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+/* Recharts: recessive axes & focus ring cleanup */
+.recharts-cartesian-axis-tick-value {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-sector:focus,
+.recharts-rectangle:focus {
+  outline: none;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-pop {
+  animation: pop 0.18s ease-out;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
