@@ -8,7 +8,7 @@ import {
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
 import { Icon } from '../lib/icons';
-import { resizeImage } from '../lib/format';
+import { parseAmount, resizeImage } from '../lib/format';
 import { keys, useApiMutation, useHousehold } from '../lib/queries';
 import { AccountCard, InstitutionLogo } from './AccountCard';
 import { Button, ColorPicker, Field, IconPicker, Input, Select, clsx } from './ui';
@@ -95,13 +95,17 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
       toast.error('Give your account a name');
       return;
     }
+    const balance = parseAmount(d.initialBalance, true);
+    const limit = d.type === 'credit' ? parseAmount(d.creditLimit) : null;
+    if (Number.isNaN(balance)) return void toast.error('The balance must be a number, like 1250.50 or -300');
+    if (Number.isNaN(limit)) return void toast.error('The credit limit must be a positive number');
     const body: Record<string, unknown> = {
       name: d.name.trim(),
       color: d.color,
       icon: d.icon,
       image: d.image,
-      initialBalance: Number(d.initialBalance.replace(',', '.') || 0),
-      creditLimit: d.type === 'credit' && d.creditLimit ? Number(d.creditLimit) : null,
+      initialBalance: balance ?? 0,
+      creditLimit: limit,
       shared: d.shared,
     };
     if (!editing) {
@@ -117,8 +121,8 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
       await save.mutateAsync(body);
       toast.success(editing ? 'Account updated' : `${d.name} is ready`);
       onDone();
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 
@@ -212,8 +216,8 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
     institutionId: d.institution?.id ?? account?.institutionId ?? null,
     institutionName: d.institution?.name ?? (d.customInstitution || null),
     currency: d.currency,
-    balance: editing ? account!.balance : Number(d.initialBalance.replace(',', '.') || 0),
-    creditLimit: d.creditLimit ? Number(d.creditLimit) : null,
+    balance: editing ? account!.balance : (parseAmount(d.initialBalance, true) || 0),
+    creditLimit: parseAmount(d.creditLimit) || null,
     householdId: d.shared ? 'x' : null,
   };
 
@@ -329,7 +333,8 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
             loading={remove.isPending}
             onClick={async () => {
               if (!confirm(`Delete "${account!.name}" and all its transactions? This cannot be undone.`)) return;
-              await remove.mutateAsync(undefined);
+              const ok = await remove.mutateAsync(undefined).then(() => true, () => false);
+              if (!ok) return;
               toast.success('Account deleted');
               onDone();
             }}

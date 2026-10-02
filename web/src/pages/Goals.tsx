@@ -4,7 +4,7 @@ import { CalendarClock, Check, ImagePlus, Minus, PartyPopper, Plus, Trash2, User
 import { CURRENCIES, GOAL_ICONS, PERSONAL_COLORS, convert, etaFor, goalPlan, parseDate, project, type Frequency, type Goal } from '@ft/core';
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
-import { formatDay, resizeImage, useMoney, percent } from '../lib/format';
+import { formatDay, parseAmount, resizeImage, useMoney, percent } from '../lib/format';
 import { Icon } from '../lib/icons';
 import { keys, useApiMutation, useGoals, useHousehold, useTxs } from '../lib/queries';
 import { Button, Card, ColorPicker, Empty, Field, IconPicker, Input, Modal, PageHeader, ProgressRing, Segmented, Select, Spinner, clsx } from '../components/ui';
@@ -106,7 +106,7 @@ function GoalCard({ goal, onClick }: { goal: Goal; onClick: () => void }) {
           <p className="mt-1 flex items-center gap-1 text-xs text-muted">
             <CalendarClock className="size-3.5" />
             {goal.completedAt ? `Reached ${formatDay(goal.completedAt.slice(0, 10))}` : eta ? `ETA ${fmtDate(eta)}` : 'Add savings to get an ETA'}
-            {goal.deadline && !goal.completedAt && <span>· due {fmtDate(goal.deadline)}</span>}
+            {goal.deadline && !goal.completedAt && (plan.overdue ? <span className="font-medium text-bad">· overdue</span> : <span>· due {fmtDate(goal.deadline)}</span>)}
           </p>
         </div>
       </div>
@@ -130,20 +130,21 @@ function GoalDetail({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const del = useApiMutation(() => api(`/goals/${goal.id}`, { method: 'DELETE' }), [keys.goals]);
   const complete = useApiMutation((completed: boolean) => api(`/goals/${goal.id}`, { method: 'PATCH', body: { completed } }), [keys.goals]);
 
-  const customAmount = Number(custom.replace(',', '.'));
+  const customAmount = parseAmount(custom) ?? 0;
   const customEta = customAmount > 0 ? etaFor(plan.remaining, customAmount, freq) : null;
   const deadlineMonths = monthsUntil(goal.deadline);
 
   async function add(sign: 1 | -1) {
-    const v = Number(amount.replace(',', '.'));
-    if (!v || v <= 0) return toast.error('Enter an amount');
+    const v = parseAmount(amount);
+    if (!v || Number.isNaN(v)) return toast.error('Enter an amount, like 250');
+    if (sign < 0 && v > goal.saved) return toast.error(`You can withdraw at most ${m(goal.saved)}`);
     try {
       await contribute.mutateAsync({ amount: sign * v });
       setAmount('');
       const reached = sign > 0 && goal.saved + v >= goal.targetAmount;
       toast.success(reached ? `🎉 You reached "${goal.name}"!` : sign > 0 ? `Added ${m(v)}` : `Withdrew ${m(v)}`);
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 
@@ -163,7 +164,12 @@ function GoalDetail({ goal, onClose }: { goal: Goal; onClose: () => void }) {
           <p className="text-muted">
             of {m(goal.targetAmount)} · <b className="text-ink">{m(plan.remaining)}</b> to go
           </p>
-          {goal.deadline && (
+          {plan.overdue && (
+            <p className="mt-1 text-sm font-medium text-bad">
+              The deadline ({fmtDate(goal.deadline)}) has passed with {m(plan.remaining)} still to go — edit the goal to set a new date.
+            </p>
+          )}
+          {goal.deadline && !plan.overdue && (
             <p className="mt-1 text-sm text-muted">
               Deadline {fmtDate(goal.deadline)}
               {plan.required && !plan.done && (
@@ -298,8 +304,8 @@ function GoalDetail({ goal, onClose }: { goal: Goal; onClose: () => void }) {
             className="ml-auto"
             onClick={async () => {
               if (!confirm(`Delete "${goal.name}"?`)) return;
-              await del.mutateAsync(undefined);
-              onClose();
+              const ok = await del.mutateAsync(undefined).then(() => true, () => false);
+              if (ok) onClose();
             }}
           >
             <Trash2 className="size-4" /> Delete
@@ -332,22 +338,26 @@ function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
 
   async function submit() {
     if (!f.name.trim()) return toast.error('Name your goal');
-    if (!Number(f.targetAmount)) return toast.error('Set a target amount');
+    const target = parseAmount(f.targetAmount);
+    const initial = parseAmount(f.initialSaved);
+    if (!target) return toast.error('Set a target amount, like 2500');
+    if (Number.isNaN(initial)) return toast.error('“Already saved” must be a number');
+    if (!goal && initial && initial > target) return toast.error('You’ve already saved more than the target — raise the target or mark it done');
     try {
       await save.mutateAsync({
         name: f.name,
-        targetAmount: Number(f.targetAmount.replace(',', '.')),
+        targetAmount: target,
         currency: f.currency,
         deadline: f.deadline || null,
         icon: f.icon,
         color: f.color,
         image: f.image,
-        ...(goal ? {} : { initialSaved: Number(f.initialSaved.replace(',', '.') || 0), shared: f.shared }),
+        ...(goal ? {} : { initialSaved: initial ?? 0, shared: f.shared }),
       });
       toast.success(goal ? 'Goal updated' : 'Goal created — let’s get there!');
       onDone();
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 

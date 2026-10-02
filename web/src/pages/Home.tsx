@@ -60,8 +60,8 @@ export function Home() {
                   try {
                     await seed.mutateAsync(undefined);
                     toast.success('Demo data loaded — explore away!');
-                  } catch (e) {
-                    toast.error((e as Error).message);
+                  } catch {
+                    // The global mutation error handler already showed a toast.
                   }
                 }}
               >

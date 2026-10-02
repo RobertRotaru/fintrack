@@ -29,8 +29,8 @@ function NoFamily() {
     try {
       await p;
       toast.success(msg);
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   };
   return (
@@ -171,8 +171,7 @@ function FamilyHome({ household }: { household: Household }) {
               className="text-bad"
               onClick={async () => {
                 if (!confirm('Leave this family? Your accounts and goals will stop being shared.')) return;
-                await leave.mutateAsync(undefined);
-                toast.success('You left the family');
+                await leave.mutateAsync(undefined).then(() => toast.success('You left the family'), () => {});
               }}
             >
               <LogOut className="size-4" /> Leave family

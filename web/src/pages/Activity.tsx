@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Plus, Search, Trash2 } from 'lucide-react';
 import { addMonths, convert, formatMoney, monthKey, monthLabel, toISODate, type Transaction } from '@ft/core';
 import { useUser } from '../lib/auth';
-import { formatDay, useMoney } from '../lib/format';
+import { formatDay, parseAmount, useMoney } from '../lib/format';
 import { useAccounts, useCreateTransfer, useDeleteTransfer, useTransactions, useTransfers } from '../lib/queries';
 import { TransactionForm, TransactionList } from '../components/Transactions';
 import { Button, Card, Empty, Field, Input, Modal, PageHeader, Segmented, Select, Spinner } from '../components/ui';
@@ -230,11 +230,16 @@ function TransferForm({ onDone }: { onDone: () => void }) {
 
   async function submit() {
     try {
-      await create.mutateAsync({ ...f, amount: Number(f.amount.replace(',', '.')), toAmount: f.toAmount ? Number(f.toAmount.replace(',', '.')) : undefined });
+      const amount = parseAmount(f.amount);
+      const toAmount = parseAmount(f.toAmount);
+      if (!amount || Number.isNaN(amount)) return void toast.error('Enter an amount, like 250');
+      if (Number.isNaN(toAmount)) return void toast.error('The received amount must be a number');
+      if (f.fromAccountId === f.toAccountId) return void toast.error('Pick two different accounts');
+      await create.mutateAsync({ ...f, amount, toAmount: toAmount ?? undefined });
       toast.success('Transfer recorded');
       onDone();
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 

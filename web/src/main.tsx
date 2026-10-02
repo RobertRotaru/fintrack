@@ -1,26 +1,32 @@
-import { StrictMode } from 'react';
+import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster, toast } from 'sonner';
 import { AuthProvider, useAuth } from './lib/auth';
 import { useFx } from './lib/queries';
 import { Layout } from './components/Layout';
 import { Spinner } from './components/ui';
 import { AuthPage } from './pages/AuthPage';
-import { Home } from './pages/Home';
-import { Accounts } from './pages/Accounts';
-import { Activity } from './pages/Activity';
-import { Reports } from './pages/Reports';
-import { Insights } from './pages/Insights';
-import { Projections } from './pages/Projections';
-import { Goals } from './pages/Goals';
-import { Invest } from './pages/Invest';
-import { Family } from './pages/Family';
-import { Settings } from './pages/Settings';
 import './index.css';
 
+// Pages load on demand so sign-in doesn't download every chart library.
+const page = <K extends string>(load: () => Promise<Record<K, React.ComponentType>>, name: K) =>
+  lazy(() => load().then((m) => ({ default: m[name] })));
+const Home = page(() => import('./pages/Home'), 'Home');
+const Accounts = page(() => import('./pages/Accounts'), 'Accounts');
+const Activity = page(() => import('./pages/Activity'), 'Activity');
+const Reports = page(() => import('./pages/Reports'), 'Reports');
+const Insights = page(() => import('./pages/Insights'), 'Insights');
+const Projections = page(() => import('./pages/Projections'), 'Projections');
+const Goals = page(() => import('./pages/Goals'), 'Goals');
+const Invest = page(() => import('./pages/Invest'), 'Invest');
+const Family = page(() => import('./pages/Family'), 'Family');
+const Settings = page(() => import('./pages/Settings'), 'Settings');
+
 const queryClient = new QueryClient({
+  // Every failed write surfaces its server message, including fire-and-forget ones.
+  mutationCache: new MutationCache({ onError: (e) => void toast.error(e.message) }),
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1 } },
 });
 
@@ -32,21 +38,23 @@ function App() {
   if (loading || fx.isLoading) return <Spinner />;
   if (!user) return <AuthPage />;
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="accounts" element={<Accounts />} />
-        <Route path="transactions" element={<Activity />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="insights" element={<Insights />} />
-        <Route path="projections" element={<Projections />} />
-        <Route path="goals" element={<Goals />} />
-        <Route path="invest" element={<Invest />} />
-        <Route path="family" element={<Family />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<Spinner />}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="accounts" element={<Accounts />} />
+          <Route path="transactions" element={<Activity />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="insights" element={<Insights />} />
+          <Route path="projections" element={<Projections />} />
+          <Route path="goals" element={<Goals />} />
+          <Route path="invest" element={<Invest />} />
+          <Route path="family" element={<Family />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

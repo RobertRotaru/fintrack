@@ -35,8 +35,8 @@ export function Invest() {
     try {
       await analyze.mutateAsync(undefined);
       toast.success('Your analysis is ready');
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 

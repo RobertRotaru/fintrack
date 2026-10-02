@@ -5,6 +5,7 @@ import { CalendarDays, ChevronDown, MessageSquareText } from 'lucide-react';
 import { addDays, formatMoney, toISODate, type TxKind } from '@ft/core';
 import { useAccounts, useCategories, useCreateTransaction, useDeleteTransaction, useTransactions } from '../lib/queries';
 import { Icon } from '../lib/icons';
+import { parseAmount } from '../lib/format';
 import { clsx, Segmented } from './ui';
 
 const LAST_ACCOUNT = 'ft.lastAccount';
@@ -57,14 +58,15 @@ export function QuickAdd({ onDone, autoFocus = true }: { onDone?: () => void; au
   const visible = showAll ? ranked : ranked.slice(0, 11);
 
   const account = active.find((a) => a.id === accountId);
-  const value = Number(amount.replace(',', '.'));
+  const value = parseAmount(amount) ?? 0;
 
   async function save(categoryId: string) {
     if (!account) {
       toast.error('Add an account first');
       return;
     }
-    if (!value || value <= 0) {
+    if (!value || Number.isNaN(value)) {
+      if (amount.trim()) toast.error('Enter an amount like 12.50');
       setShake(true);
       setTimeout(() => setShake(false), 400);
       amountRef.current?.focus();
@@ -88,8 +90,8 @@ export function QuickAdd({ onDone, autoFocus = true }: { onDone?: () => void; au
       setDate(toISODate(new Date()));
       onDone?.();
       amountRef.current?.focus();
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 

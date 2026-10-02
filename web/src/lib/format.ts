@@ -58,3 +58,15 @@ export function resizeImage(file: File, max = 320): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Strict amount parsing for form fields: accepts "12", "12.5" or "12,5" (and a
+ * leading minus when `allowNegative`). Empty → null; anything else → NaN, so a
+ * typo never silently becomes 0 on its way through JSON.
+ */
+export function parseAmount(text: string, allowNegative = false): number | null {
+  const t = text.trim().replace(',', '.');
+  if (!t) return null;
+  const re = allowNegative ? /^-?\d+(\.\d+)?$/ : /^\d+(\.\d+)?$/;
+  return re.test(t) ? Number(t) : Number.NaN;
+}

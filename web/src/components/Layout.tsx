@@ -49,8 +49,10 @@ export function Layout() {
   // "N" anywhere (outside inputs) opens quick add.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement;
-      if (el.closest('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
+      // Don't stack Quick Add on top of another open dialog.
+      if (document.querySelector('[role=dialog]')) return;
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         setQuickOpen(true);

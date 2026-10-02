@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { formatMoney, toISODate, type Account, type Transaction, type TxKind } from '@ft/core';
 import { useUser } from '../lib/auth';
-import { formatDay } from '../lib/format';
+import { formatDay, parseAmount } from '../lib/format';
 import { useAccounts, useCategories, useCreateTransaction, useDeleteTransaction, useHousehold, useUpdateTransaction } from '../lib/queries';
 import { Button, Field, IconBadge, Input, Segmented, Select, clsx } from './ui';
 import { Icon } from '../lib/icons';
@@ -79,16 +79,18 @@ export function TransactionForm({ tx, onDone }: { tx?: Transaction; onDone: () =
   const cats = categories.filter((c) => c.kind === kind && (!c.archived || c.id === tx?.categoryId));
 
   async function submit() {
-    const body = { kind, amount: Number(amount.replace(',', '.')), accountId, categoryId, date, note };
-    if (!body.amount || body.amount <= 0) return toast.error('Enter an amount');
+    const value = parseAmount(amount);
+    if (!value || Number.isNaN(value)) return toast.error('Enter an amount, like 12.50');
+    if (!date) return toast.error('Pick a date');
+    const body = { kind, amount: value, accountId, categoryId, date, note };
     if (!categoryId || !cats.some((c) => c.id === categoryId)) return toast.error('Pick a category');
     try {
       if (tx) await update.mutateAsync({ id: tx.id, ...body });
       else await create.mutateAsync(body);
       toast.success(tx ? 'Transaction updated' : 'Transaction added');
       onDone();
-    } catch (e) {
-      toast.error((e as Error).message);
+    } catch {
+      // The global mutation error handler already showed a toast.
     }
   }
 
@@ -153,7 +155,8 @@ export function TransactionForm({ tx, onDone }: { tx?: Transaction; onDone: () =
             variant="danger"
             loading={remove.isPending}
             onClick={async () => {
-              await remove.mutateAsync(tx.id);
+              const ok = await remove.mutateAsync(tx.id).then(() => true, () => false);
+              if (!ok) return;
               toast.success('Transaction deleted');
               onDone();
             }}

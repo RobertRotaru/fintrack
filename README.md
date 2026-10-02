@@ -64,6 +64,10 @@ fintrack/
 The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app
 uses the exact same logic and the same API.
 
+**Tested** with 140 Vitest tests: unit tests for the analytics (dates, rounding, reports, projections,
+goal plans, insights) and API integration tests covering validation, boundary values, permissions
+and family-sharing isolation against a throwaway database.
+
 **Design notes**
 
 - **Type:** Bricolage Grotesque for headings and headline figures, Figtree for everything else, with tabular figures wherever amounts line up.

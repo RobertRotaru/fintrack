@@ -52,8 +52,8 @@ export function Settings() {
               try {
                 setUser(await save.mutateAsync(profile));
                 toast.success('Profile saved');
-              } catch (e) {
-                toast.error((e as Error).message);
+              } catch {
+                // The global mutation error handler already showed a toast.
               }
             }}
           >
@@ -152,8 +152,8 @@ function CategoryForm({ category, kind, onDone }: { category?: Category; kind: T
             await save.mutateAsync(f);
             toast.success(category ? 'Category updated' : 'Category added');
             onDone();
-          } catch (e) {
-            toast.error((e as Error).message);
+          } catch {
+            // The global mutation error handler already showed a toast.
           }
         }}
       >
