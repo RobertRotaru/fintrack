@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { toISODate } from '@ft/core';
+import { decimalsFor, minUnit, toISODate } from '@ft/core';
 import { get, run } from '../db';
 import { bad, forbidden, isoDate, notFound, num, oneOf, str, uid } from '../http';
 import { accountFor, transactionById, visibleTransactions } from '../repo';
@@ -9,20 +9,23 @@ export const transactions = Router();
 
 transactions.get('/', (req, res) => {
   const q = req.query;
+  const date = (v: unknown, field: string) => (v === undefined ? undefined : isoDate(v, field));
   res.json(
     visibleTransactions(uid(req), {
-      from: typeof q.from === 'string' ? q.from : undefined,
-      to: typeof q.to === 'string' ? q.to : undefined,
+      from: date(q.from, 'from'),
+      to: date(q.to, 'to'),
       accountId: typeof q.accountId === 'string' ? q.accountId : undefined,
     }),
   );
 });
 
-function checkCategory(userId: string, categoryId: unknown, kind: string) {
+/** `keepArchived` lets an edit keep its existing (since archived) category. */
+function checkCategory(userId: string, categoryId: unknown, kind: string, keepArchived?: string) {
   const id = str(categoryId, 'Category');
-  const cat = get('SELECT kind FROM categories WHERE id = ? AND user_id = ?', id, userId);
+  const cat = get('SELECT kind, archived FROM categories WHERE id = ? AND user_id = ?', id, userId);
   if (!cat) throw bad('Unknown category');
   if (cat.kind !== kind) throw bad(`That category is for ${cat.kind}s`);
+  if (cat.archived && id !== keepArchived) throw bad('That category is archived — restore it first');
   return id;
 }
 
@@ -39,7 +42,7 @@ transactions.post('/', (req, res) => {
     acc.id,
     me,
     kind,
-    num(b.amount, 'Amount', { min: 0.01 }),
+    num(b.amount, 'Amount', { min: minUnit(acc.currency), decimals: decimalsFor(acc.currency) }),
     checkCategory(me, b.categoryId, kind),
     b.date ? isoDate(b.date, 'Date') : toISODate(new Date()),
     str(b.note, 'Note', { max: 200, optional: true }) || null,
@@ -59,14 +62,15 @@ transactions.patch('/:id', (req, res) => {
   const t = editable(me, req.params.id);
   const b = req.body;
   const kind = b.kind !== undefined ? oneOf(b.kind, 'Kind', ['expense', 'income'] as const) : t.kind;
-  const accountId = b.accountId !== undefined ? accountFor(me, str(b.accountId, 'Account'))?.id : t.accountId;
-  if (!accountId) throw bad('Unknown account');
+  const acc = accountFor(me, b.accountId !== undefined ? str(b.accountId, 'Account') : t.accountId);
+  if (!acc) throw bad('Unknown account');
+  const accountId = acc.id;
   run(
     'UPDATE transactions SET account_id = ?, kind = ?, amount = ?, category_id = ?, date = ?, note = ? WHERE id = ?',
     accountId,
     kind,
-    b.amount !== undefined ? num(b.amount, 'Amount', { min: 0.01 }) : t.amount,
-    b.categoryId !== undefined || b.kind !== undefined ? checkCategory(me, b.categoryId ?? t.categoryId, kind) : t.categoryId,
+    b.amount !== undefined ? num(b.amount, 'Amount', { min: minUnit(acc.currency), decimals: decimalsFor(acc.currency) }) : t.amount,
+    b.categoryId !== undefined || b.kind !== undefined ? checkCategory(me, b.categoryId ?? t.categoryId, kind, t.categoryId) : t.categoryId,
     b.date !== undefined ? isoDate(b.date, 'Date') : t.date,
     b.note !== undefined ? str(b.note, 'Note', { max: 200, optional: true }) || null : t.note,
     t.id,

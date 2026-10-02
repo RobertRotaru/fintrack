@@ -47,11 +47,32 @@ auth.post('/register', async (req, res) => {
   res.status(201).json({ token: signToken(id), user: toUser(get('SELECT * FROM users WHERE id = ?', id)!) });
 });
 
+// Brute-force guard: per email+IP, at most MAX_FAILS failed logins per window.
+const MAX_FAILS = 10;
+const WINDOW_MS = 15 * 60 * 1000;
+const failures = new Map<string, { count: number; first: number }>();
+
 auth.post('/login', async (req, res) => {
-  const email = str(req.body.email, 'Email').toLowerCase();
-  const password = str(req.body.password, 'Password');
+  const email = str(req.body.email, 'Email', { max: 200 }).toLowerCase();
+  const password = str(req.body.password, 'Password', { max: 200 });
+  const key = `${req.ip}|${email}`;
+  const now = Date.now();
+  const f = failures.get(key);
+  if (f && now - f.first > WINDOW_MS) failures.delete(key);
+  else if (f && f.count >= MAX_FAILS) {
+    const minutes = Math.ceil((WINDOW_MS - (now - f.first)) / 60_000);
+    throw new HttpError(429, `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`);
+  }
+
   const row = get('SELECT * FROM users WHERE email = ?', email);
-  if (!row || !(await bcrypt.compare(password, row.password_hash as string))) throw new HttpError(401, 'Wrong email or password');
+  if (!row || !(await bcrypt.compare(password, row.password_hash as string))) {
+    if (failures.size > 10_000) for (const [k, v] of failures) if (now - v.first > WINDOW_MS) failures.delete(k);
+    const cur = failures.get(key) ?? { count: 0, first: now };
+    cur.count++;
+    failures.set(key, cur);
+    throw new HttpError(401, 'Wrong email or password');
+  }
+  failures.delete(key);
   res.json({ token: signToken(row.id as string), user: toUser(row) });
 });
 
@@ -64,8 +85,14 @@ auth.get('/me', requireAuth, (req, res) => {
 auth.patch('/me', requireAuth, (req, res) => {
   const me = uid(req);
   const b = req.body;
-  if (b.name !== undefined) run('UPDATE users SET name = ? WHERE id = ?', str(b.name, 'Name', { max: 80 }), me);
-  if (b.country !== undefined) run('UPDATE users SET country = ? WHERE id = ?', oneOf(b.country, 'Country', countryCodes), me);
-  if (b.baseCurrency !== undefined) run('UPDATE users SET base_currency = ? WHERE id = ?', oneOf(b.baseCurrency, 'Currency', CURRENCIES), me);
+  // Validate every field first so a bad one doesn't leave the others half-saved.
+  const name = b.name !== undefined ? str(b.name, 'Name', { max: 80 }) : undefined;
+  const country = b.country !== undefined ? oneOf(b.country, 'Country', countryCodes) : undefined;
+  const currency = b.baseCurrency !== undefined ? oneOf(b.baseCurrency, 'Currency', CURRENCIES) : undefined;
+  tx(() => {
+    if (name !== undefined) run('UPDATE users SET name = ? WHERE id = ?', name, me);
+    if (country !== undefined) run('UPDATE users SET country = ? WHERE id = ?', country, me);
+    if (currency !== undefined) run('UPDATE users SET base_currency = ? WHERE id = ?', currency, me);
+  });
   res.json(toUser(get('SELECT * FROM users WHERE id = ?', me)!));
 });

@@ -1,3 +1,4 @@
+import { roundFor } from '@ft/core';
 import type { Account, Category, Goal, GoalContribution, Household, Transaction, Transfer, User } from '@ft/core';
 import { all, get, type Row } from './db';
 
@@ -27,7 +28,7 @@ export const toAccount = (r: Row): Account => ({
   creditLimit: (r.credit_limit as number) ?? null,
   archived: !!r.archived,
   createdAt: r.created_at as string,
-  balance: Math.round(((r.initial_balance as number) + ((r.flow as number) ?? 0)) * 100) / 100,
+  balance: roundFor((r.initial_balance as number) + ((r.flow as number) ?? 0), r.currency as string),
 });
 
 export const toCategory = (r: Row): Category => ({
@@ -157,7 +158,7 @@ export function visibleGoals(userId: string): Goal[] {
       image: (g.image as string) ?? null,
       createdAt: g.created_at as string,
       completedAt: (g.completed_at as string) ?? null,
-      saved: Math.round(contributions.reduce((s, c) => s + c.amount, 0) * 100) / 100,
+      saved: roundFor(contributions.reduce((s, c) => s + c.amount, 0), g.currency as string),
       contributions,
     };
   });

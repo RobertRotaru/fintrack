@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { FX_PER_EUR, addDays, addMonths, daysInMonth, institutionsFor, monthKey, toISODate } from '@ft/core';
+import { DEFAULT_CATEGORIES, FX_PER_EUR, addDays, addMonths, daysInMonth, institutionsFor, monthKey, toISODate } from '@ft/core';
 import { all, get, run, tx } from '../db';
 import { HttpError, uid } from '../http';
 
@@ -29,8 +29,20 @@ demo.post('/', (req, res) => {
   const k = FX_PER_EUR[currency] ?? 1; // amounts below are in EUR
   const rand = rng(42);
   const between = (a: number, b: number) => Math.round((a + rand() * (b - a)) * k * 100) / 100;
-  const cats = new Map(all('SELECT id, kind, name FROM categories WHERE user_id = ?', me).map((c) => [`${c.kind}:${c.name}`, c.id as string]));
-  const cat = (kind: string, name: string) => cats.get(`${kind}:${name}`) ?? cats.get(`${kind}:Other`)!;
+  // Use the user's active categories; recreate any default the demo needs that
+  // was deleted or archived, instead of failing on a missing category.
+  const cats = new Map(all('SELECT id, kind, name FROM categories WHERE user_id = ? AND archived = 0', me).map((c) => [`${c.kind}:${c.name}`, c.id as string]));
+  const cat = (kind: string, name: string) => {
+    const key = `${kind}:${name}`;
+    let id = cats.get(key);
+    if (!id) {
+      const def = DEFAULT_CATEGORIES.find((c) => c.kind === kind && c.name === name)!;
+      id = randomUUID();
+      run('INSERT INTO categories (id, user_id, kind, name, icon, color, is_default) VALUES (?, ?, ?, ?, ?, ?, 1)', id, me, kind, name, def.icon, def.color);
+      cats.set(key, id);
+    }
+    return id;
+  };
 
   const banks = institutionsFor(country, 'debit');
   const main = banks[0];

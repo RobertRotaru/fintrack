@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { convert, round2, toISODate } from '@ft/core';
+import { convert, decimalsFor, minUnit, roundFor, toISODate } from '@ft/core';
 import { run } from '../db';
 import { bad, forbidden, isoDate, notFound, num, str, uid } from '../http';
 import { accountFor, visibleTransfers } from '../repo';
@@ -18,9 +18,12 @@ transfers.post('/', (req, res) => {
   const to = accountFor(me, str(b.toAccountId, 'To account'));
   if (!from || !to) throw bad('Unknown account');
   if (from.id === to.id) throw bad('Pick two different accounts');
-  const amount = num(b.amount, 'Amount', { min: 0.01 });
+  const amount = num(b.amount, 'Amount', { min: minUnit(from.currency), decimals: decimalsFor(from.currency) });
   const toAmount =
-    b.toAmount !== undefined && b.toAmount !== '' ? num(b.toAmount, 'Received amount', { min: 0.01 }) : round2(convert(amount, from.currency, to.currency));
+    b.toAmount !== undefined && b.toAmount !== '' && b.toAmount !== null
+      ? num(b.toAmount, 'Received amount', { min: minUnit(to.currency), decimals: decimalsFor(to.currency) })
+      : roundFor(convert(amount, from.currency, to.currency), to.currency);
+  if (toAmount <= 0) throw bad(`That amount is too small to arrive in ${to.currency}`);
   const id = randomUUID();
   run(
     'INSERT INTO transfers (id, user_id, from_account_id, to_account_id, amount, to_amount, date, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
