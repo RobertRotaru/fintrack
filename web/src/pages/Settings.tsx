@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Archive, ArchiveRestore, LogOut, Plus } from 'lucide-react';
+import { Archive, ArchiveRestore, Check, LogOut, Monitor, Moon, Plus, Sun } from 'lucide-react';
 import { COUNTRIES, CURRENCIES, PERSONAL_COLORS, convert, type Category, type TxKind, type User } from '@ft/core';
 import { api } from '../lib/api';
 import { useAuth, useUser } from '../lib/auth';
 import { CATEGORY_ICON_CHOICES } from '../lib/icons';
+import { useTheme, type ThemePref } from '../lib/theme';
 import { keys, useAccounts, useApiMutation, useCategories, useFx } from '../lib/queries';
 import {
   Button,
@@ -76,6 +77,7 @@ export function Settings() {
           </Button>
         </div>
       </Card>
+      <Appearance />
       <Categories />
       <ExchangeRates />
     </div>
@@ -247,6 +249,67 @@ function ExchangeRates() {
         </a>{' '}
         · crypto via Coinbase. Reports convert every account into {user.baseCurrency} with these rates.
       </p>
+    </Card>
+  );
+}
+
+const THEMES: { value: ThemePref; label: string; icon: typeof Sun; hint: string }[] = [
+  { value: 'light', label: 'Light', icon: Sun, hint: 'Warm ivory' },
+  { value: 'dark', label: 'Dark', icon: Moon, hint: 'Deep night' },
+  { value: 'system', label: 'System', icon: Monitor, hint: 'Follows your device' },
+];
+
+/** A miniature of the app in a given theme, drawn with that theme's own colours. */
+function ThemePreview({ dark }: { dark: boolean }) {
+  const c = dark
+    ? { bg: '#0a101c', side: '#0d1523', card: '#111a2a', line: '#1e2a40', ink: '#edf3f0', brand: '#4fd88f', chart: '#5cf0b0' }
+    : { bg: '#f6f2ea', side: '#f1ece2', card: '#fcfaf5', line: '#e6dfd1', ink: '#143021', brand: '#1d5c3d', chart: '#2e9a68' };
+  return (
+    <svg viewBox="0 0 120 72" className="w-full rounded-xl" aria-hidden="true">
+      <rect width="120" height="72" fill={c.bg} />
+      <rect width="28" height="72" fill={c.side} />
+      <rect x="6" y="8" width="14" height="4" rx="2" fill={c.ink} opacity={0.8} />
+      {[18, 25, 32].map((y) => (
+        <rect key={y} x="6" y={y} width="16" height="3" rx="1.5" fill={c.ink} opacity={0.25} />
+      ))}
+      <rect x="36" y="9" width="44" height="6" rx="3" fill={c.ink} opacity={0.85} />
+      <rect x="36" y="22" width="76" height="42" rx="6" fill={c.card} stroke={c.line} />
+      <path d="M42 54 C 56 50 62 40 74 42 S 96 30 106 30" fill="none" stroke={c.chart} strokeWidth="2" strokeLinecap="round" />
+      <rect x="42" y="28" width="22" height="5" rx="2.5" fill={c.brand} />
+    </svg>
+  );
+}
+
+function Appearance() {
+  const { pref, theme, setPref } = useTheme();
+  return (
+    <Card>
+      <CardHeader title="Appearance" subtitle="The same Fintrack, in the light that suits you." />
+      <div role="radiogroup" aria-label="Theme" className="grid gap-3 sm:grid-cols-3">
+        {THEMES.map((t) => {
+          const selected = pref === t.value;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setPref(t.value)}
+              className={clsx(
+                'group rounded-2xl border p-3 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20',
+                selected ? 'border-brand bg-brand-soft/60' : 'border-line hover:border-line-strong',
+              )}
+            >
+              <ThemePreview dark={t.value === 'system' ? theme === 'dark' : t.value === 'dark'} />
+              <span className="mt-3 flex items-center gap-2 text-sm font-semibold">
+                <t.icon className="size-4 text-muted" /> {t.label}
+                {selected && <Check className="ml-auto size-4 text-brand-fg" />}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted">{t.hint}</span>
+            </button>
+          );
+        })}
+      </div>
     </Card>
   );
 }

@@ -9,6 +9,9 @@ import { useFx } from './lib/queries';
 import { Layout } from './components/Layout';
 import { AppSplash, NotFound } from './components/states';
 import { AuthPage } from './pages/AuthPage';
+// Self-hosted variable fonts with optical sizing: no third-party requests.
+import '@fontsource-variable/inter/opsz.css';
+import '@fontsource-variable/newsreader/opsz.css';
 import './index.css';
 
 // Pages load on demand so sign-in doesn't download every chart library.
@@ -17,6 +20,7 @@ const page = <K extends string>(load: () => Promise<Record<K, React.ComponentTyp
 const Home = page(() => import('./pages/Home'), 'Home');
 const Accounts = page(() => import('./pages/Accounts'), 'Accounts');
 const Activity = page(() => import('./pages/Activity'), 'Activity');
+const Spending = page(() => import('./pages/Spending'), 'Spending');
 const Reports = page(() => import('./pages/Reports'), 'Reports');
 const Insights = page(() => import('./pages/Insights'), 'Insights');
 const Projections = page(() => import('./pages/Projections'), 'Projections');
@@ -51,6 +55,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="transactions" element={<Activity />} />
+        <Route path="spending" element={<Spending />} />
         <Route path="reports" element={<Reports />} />
         <Route path="insights" element={<Insights />} />
         <Route path="projections" element={<Projections />} />

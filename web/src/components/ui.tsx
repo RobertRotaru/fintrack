@@ -1,7 +1,8 @@
 import { useEffect, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { Check, Loader2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronRight, Loader2, X } from 'lucide-react';
+import { Link } from 'react-router';
 import { Icon } from '../lib/icons';
 import { onColor } from '../lib/format';
 
@@ -22,12 +23,14 @@ export function Button({
       {...props}
       disabled={props.disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold tracking-[-0.01em] transition duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20',
         size === 'sm' && 'h-8 px-3 text-xs',
         size === 'md' && 'h-10 px-4 text-sm',
-        size === 'lg' && 'h-12 px-5 text-base',
-        variant === 'primary' && 'bg-brand text-brand-ink hover:brightness-110',
-        variant === 'secondary' && 'bg-surface-2 text-ink hover:bg-surface-3 border border-line',
+        size === 'lg' && 'h-12 px-6 text-[15px]',
+        // Tactile primary: a soft top highlight, a grounded shadow, a gentle lift on hover.
+        variant === 'primary' &&
+          'bg-brand text-brand-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.12),0_6px_16px_-6px_var(--brand-glow)] hover:-translate-y-px hover:brightness-[1.06] hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_2px_4px_rgb(0_0_0/0.12),0_12px_24px_-8px_var(--brand-glow)]',
+        variant === 'secondary' && 'bg-surface text-ink border border-line shadow-[0_1px_2px_rgb(0_0_0/0.04)] hover:border-line-strong hover:bg-surface-2',
         variant === 'ghost' && 'text-ink-2 hover:bg-surface-2 hover:text-ink',
         variant === 'danger' && 'bg-bad-soft text-bad hover:brightness-95',
         className,
@@ -45,7 +48,7 @@ export function IconButton({ label, className, children, ...props }: ButtonHTMLA
       {...props}
       aria-label={label}
       title={label}
-      className={clsx('inline-flex size-9 items-center justify-center rounded-xl text-ink-2 hover:bg-surface-2 hover:text-ink transition cursor-pointer', className)}
+      className={clsx('inline-flex size-9 items-center justify-center rounded-xl text-ink-2 hover:bg-surface-2 hover:text-ink transition cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20', className)}
     >
       {children}
     </button>
@@ -64,7 +67,7 @@ export function CardHeader({ title, subtitle, action }: { title: ReactNode; subt
   return (
     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h3 className="font-semibold text-ink">{title}</h3>
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
         {subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}
       </div>
       {action}
@@ -84,7 +87,7 @@ export function Field({ label, hint, error, children }: { label: string; hint?: 
 }
 
 const inputCls =
-  'w-full h-11 rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 transition';
+  'w-full h-11 rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted outline-none hover:border-line-strong focus:border-brand focus:ring-4 focus:ring-brand/15 transition';
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={clsx(inputCls, className)} />;
@@ -111,7 +114,7 @@ export function Segmented<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={clsx('inline-flex rounded-xl bg-surface-2 p-1 border border-line', className)}>
+    <div role="tablist" className={clsx('inline-flex rounded-full bg-surface-2 p-1', className)}>
       {options.map((o) => (
         <button
           key={o.value}
@@ -120,8 +123,8 @@ export function Segmented<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={clsx(
-            'flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition cursor-pointer whitespace-nowrap',
-            value === o.value ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink',
+            'flex-1 rounded-full px-3.5 py-1.5 text-sm font-medium transition duration-200 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
+            value === o.value ? 'bg-surface text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08),0_2px_8px_-2px_rgb(0_0_0/0.08)]' : 'text-muted hover:text-ink',
           )}
         >
           {o.label}
@@ -158,20 +161,20 @@ export function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0b1a12]/35 backdrop-blur-[3px] p-0 sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
-        className={clsx('animate-pop w-full max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-surface border border-line shadow-2xl', wide ? 'sm:max-w-2xl' : 'sm:max-w-md')}
+        className={clsx('animate-pop w-full max-h-[92vh] overflow-y-auto rounded-t-[28px] sm:rounded-[28px] bg-surface border border-line shadow-[var(--shadow-lg)]', wide ? 'sm:max-w-2xl' : 'sm:max-w-md')}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-surface/95 backdrop-blur px-5 pt-5 pb-3">
-          <h2 className="text-lg font-bold">{title}</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-surface/95 backdrop-blur px-6 pt-6 pb-3">
+          <h2 className="text-2xl">{title}</h2>
           <IconButton label="Close" onClick={onClose}>
             <X className="size-5" />
           </IconButton>
         </div>
-        <div className="px-5 pb-5">{children}</div>
+        <div className="px-6 pb-6">{children}</div>
       </div>
     </div>,
     document.body,
@@ -181,11 +184,11 @@ export function Modal({
 export function Empty({ icon, title, children, action }: { icon: string; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 px-6">
-      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand-fg">
-        <Icon name={icon} className="size-7" />
+      <div className="mb-5 flex size-16 items-center justify-center rounded-[20px] bg-brand-soft text-brand-fg ring-8 ring-brand-soft/40">
+        <Icon name={icon} className="size-7" strokeWidth={1.75} />
       </div>
-      <h3 className="font-semibold text-ink">{title}</h3>
-      {children && <p className="mt-1 max-w-sm text-sm text-muted">{children}</p>}
+      <h3 className="font-display text-2xl text-ink">{title}</h3>
+      {children && <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">{children}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -244,10 +247,18 @@ export function IconPicker({ value, onChange, icons, color }: { value: string; o
   );
 }
 
-export function ProgressBar({ value, color }: { value: number; color: string }) {
+export function ProgressBar({ value, color, size = 'md', label }: { value: number; color: string; size?: 'sm' | 'md' | 'lg'; label?: string }) {
+  const pct = Math.min(100, Math.max(0, value * 100));
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-3">
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, value * 100))}%`, background: color }} />
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pct)}
+      className={clsx('w-full overflow-hidden rounded-full bg-surface-3', size === 'sm' ? 'h-1.5' : size === 'md' ? 'h-2' : 'h-3')}
+    >
+      <div className="grow-x h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: `linear-gradient(90deg, color-mix(in oklab, ${color} 75%, var(--surface)), ${color})` }} />
     </div>
   );
 }
@@ -281,9 +292,11 @@ export function Delta({ value, inverse, className }: { value: number | null; inv
   if (value === null || !Number.isFinite(value)) return <span className={clsx('text-xs text-muted', className)}>new</span>;
   const good = inverse ? value < 0 : value > 0;
   const flat = Math.abs(value) < 0.5;
+  const Arrow = value > 0 ? ArrowUp : ArrowDown;
   return (
-    <span className={clsx('inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-semibold num', flat ? 'bg-surface-2 text-muted' : good ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad', className)}>
-      {value > 0 ? '▲' : value < 0 ? '▼' : ''} {Math.abs(Math.round(value))}%
+    <span className={clsx('inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold num', flat ? 'bg-surface-2 text-muted' : good ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad', className)}>
+      {!flat && <Arrow className="size-3" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
+      {Math.abs(Math.round(value))}%
     </span>
   );
 }
@@ -298,12 +311,65 @@ export function Spinner() {
 
 export function PageHeader({ title, subtitle, action }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="text-4xl sm:text-[44px] leading-[1.05]">{title}</h1>
+        {subtitle && <p className="mt-2 max-w-xl text-[15px] text-muted">{subtitle}</p>}
       </div>
       {action}
     </div>
+  );
+}
+
+/**
+ * A plain-language change: arrow, percentage and an optional "this month".
+ * Colour follows meaning (spending down is good), and the arrow carries it too.
+ */
+export function Trend({ value, inverse, suffix, className }: { value: number | null; inverse?: boolean; suffix?: string; className?: string }) {
+  if (value === null || !Number.isFinite(value)) return <span className={clsx('text-sm text-muted', className)}>{suffix ? `— ${suffix}` : '—'}</span>;
+  const flat = Math.abs(value) < 0.05;
+  const good = inverse ? value < 0 : value > 0;
+  const Arrow = value >= 0 ? ArrowUp : ArrowDown;
+  const digits = Math.abs(value) < 10 ? 1 : 0;
+  return (
+    <span className={clsx('inline-flex items-center gap-1 text-sm font-medium num', flat ? 'text-muted' : good ? 'text-good' : 'text-bad', className)}>
+      {!flat && <Arrow className="size-3.5" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
+      {Math.abs(value).toFixed(digits)}%{suffix && <span className="font-normal text-muted"> {suffix}</span>}
+    </span>
+  );
+}
+
+/** An editorial section heading with an optional "see all" link. */
+export function SectionTitle({ title, subtitle, to, linkLabel = 'See all', action, className }: { title: ReactNode; subtitle?: ReactNode; to?: string; linkLabel?: string; action?: ReactNode; className?: string }) {
+  return (
+    <div className={clsx('mb-5 flex flex-wrap items-end justify-between gap-3', className)}>
+      <div className="min-w-0">
+        <h2 className="text-[28px] leading-tight">{title}</h2>
+        {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
+      </div>
+      {action}
+      {to && (
+        <Link to={to} className="group inline-flex items-center gap-1 text-sm font-medium text-brand-fg hover:underline underline-offset-4">
+          {linkLabel} <ChevronRight className="size-4 transition group-hover:translate-x-0.5" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+const AVATAR_TONES = ['var(--emerald)', 'var(--peach)', 'var(--cobalt)', 'var(--violet)', 'var(--sky)', 'var(--sun)'];
+
+/** Initials on a warm tone picked from the name, so the same person always gets the same colour. */
+export function Avatar({ name, size = 40, ring }: { name: string; size?: number; ring?: boolean }) {
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';
+  const tone = AVATAR_TONES[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % AVATAR_TONES.length];
+  return (
+    <span
+      aria-hidden="true"
+      className={clsx('inline-flex shrink-0 items-center justify-center rounded-full font-semibold', ring && 'ring-4 ring-surface')}
+      style={{ width: size, height: size, fontSize: size * 0.36, background: `color-mix(in oklab, ${tone} 22%, var(--surface))`, color: `color-mix(in oklab, ${tone} 75%, var(--ink))` }}
+    >
+      {initials}
+    </span>
   );
 }

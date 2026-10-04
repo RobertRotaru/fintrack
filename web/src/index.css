@@ -2,108 +2,194 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+/*
+ * Fintrack design tokens.
+ *
+ * Light: warm ivory paper, deep forest ink, soft sage and muted emerald, with
+ * peach, sky and the occasional cobalt for data. Nothing is pure white.
+ * Dark: deep blue-black with lighter elevated surfaces, emerald and electric
+ * mint as the signature, cobalt, violet and warm orange for data. Light is
+ * used sparingly — only the things that matter get a glow.
+ */
 :root {
   color-scheme: light;
-  --bg: #f5f7fa;
-  --surface: #ffffff;
-  --surface-2: #eef1f6;
-  --surface-3: #e2e7ef;
-  --line: #e1e6ee;
-  --ink: #0e1a2b;
-  --ink-2: #3f4b5e;
-  --muted: #6b7689;
-  /* Navy: buttons & fills (white text 11:1), and navy text (same here). */
-  --brand: #1e3a6e;
+  --bg: #f6f2ea;
+  --bg-glow: radial-gradient(1200px 600px at 85% -10%, rgb(197 222 196 / 0.45), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgb(246 214 190 / 0.35), transparent 60%);
+  --surface: #fcfaf5;
+  --surface-2: #f2ede3;
+  --surface-3: #e7e0d2;
+  --sidebar: #f1ece2;
+  --line: #e6dfd1;
+  --line-strong: #d8cfbd;
+  --ink: #143021;
+  --ink-2: #3c5246;
+  --muted: #6e7c72;
+  /* Forest green: primary actions (white text 8.6:1). */
+  --brand: #1d5c3d;
   --brand-ink: #ffffff;
-  --brand-fg: #1e3a6e;
-  --brand-soft: #e7edf8;
-  /* Headline net-worth card */
-  --hero: #13254a;
+  --brand-fg: #1d6b45;
+  --brand-soft: #e2ece2;
+  --brand-glow: rgb(29 92 61 / 0.18);
+  /* Legacy headline surface (sign-in panel). */
+  --hero: #1d4d36;
   --hero-ink: #ffffff;
   --hero-line: transparent;
-  /* chart series: validated categorical slots (aqua / orange / blue) */
-  --income: #1baf7a;
-  --expense: #eb6834;
-  --net: #2a78d6;
-  --grid: #e8ecf2;
-  /* status — reserved, always paired with an icon */
-  --good: #0f9f6e;
-  --good-soft: #e6f7f0;
-  --bad: #dc3d3d;
-  --bad-soft: #fdecec;
-  --warn: #c98500;
-  --shadow: 0 1px 2px rgb(14 26 43 / 0.04), 0 4px 16px rgb(14 26 43 / 0.05);
+  /* Palette */
+  --sage: #a8c4a2;
+  --emerald: #2e9a68;
+  --mint: #3fbf86;
+  --peach: #ee9a6c;
+  --sky: #78aedc;
+  --cobalt: #3e63d6;
+  --violet: #8a6cd1;
+  --sun: #f3c46b;
+  /* Chart series */
+  --income: #2e9a68;
+  --expense: #e07f4f;
+  --net: #3e63d6;
+  --grid: #ebe4d6;
+  --chart-line: #1f7a50;
+  --chart-fill: #2e9a68;
+  /* Status — always paired with an icon or label */
+  --good: #24834f;
+  --good-soft: #e1efe3;
+  --bad: #c2462c;
+  --bad-soft: #f8e5dc;
+  --warn: #b7800f;
+  --warn-soft: #f8edd3;
+  --shadow: 0 1px 2px rgb(63 50 26 / 0.04), 0 6px 20px -8px rgb(63 50 26 / 0.1);
+  --shadow-lg: 0 2px 4px rgb(63 50 26 / 0.04), 0 24px 48px -16px rgb(63 50 26 / 0.18);
+  /* Illustrations */
+  --ill-sky-1: #f7efe0;
+  --ill-sky-2: #eef3e6;
+  --ill-sun: #f6d48f;
+  --ill-hill-1: #cfe0c4;
+  --ill-hill-2: #a9c99c;
+  --ill-hill-3: #7fae78;
+  --ill-hill-4: #4f8a5a;
+  --ill-tree: #2f6e48;
+  --ill-water: #cfe2ea;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #0a0f1a;
-    --surface: #121a2a;
-    --surface-2: #182236;
-    --surface-3: #222e45;
-    --line: #222d42;
-    --ink: #eef2f8;
-    --ink-2: #c2cad8;
-    --muted: #8390a6;
-    /* Navy is too dark to read on dark surfaces: brighter fill, light text tone. */
-    --brand: #3f66b8;
-    --brand-ink: #ffffff;
-    --brand-fg: #8fb0f0;
-    --brand-soft: #172645;
-    --hero: #172a52;
+    --bg: #0a101c;
+    --bg-glow: radial-gradient(1000px 520px at 90% -10%, rgb(46 180 120 / 0.12), transparent 60%), radial-gradient(800px 480px at -10% 110%, rgb(91 120 255 / 0.08), transparent 60%);
+    --surface: #111a2a;
+    --surface-2: #172236;
+    --surface-3: #212e46;
+    --sidebar: #0d1523;
+    --line: #1e2a40;
+    --line-strong: #2a3852;
+    --ink: #edf3f0;
+    --ink-2: #c1ccc8;
+    --muted: #8593a5;
+    --brand: #4fd88f;
+    --brand-ink: #05281a;
+    --brand-fg: #62e3a0;
+    --brand-soft: #12301f;
+    --brand-glow: rgb(79 216 143 / 0.28);
+    --hero: #102a1e;
     --hero-ink: #ffffff;
     --hero-line: rgb(255 255 255 / 0.08);
-    --income: #199e70;
-    --expense: #d95926;
-    --net: #3987e5;
-    --grid: #1d2639;
-    --good: #34c38f;
-    --good-soft: #10291f;
-    --bad: #f06a6a;
-    --bad-soft: #2d1414;
-    --warn: #e0a028;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+    --sage: #6f9a78;
+    --emerald: #2fbf7d;
+    --mint: #5cf0b0;
+    --peach: #ff9c63;
+    --sky: #66b4ff;
+    --cobalt: #5b7cff;
+    --violet: #9d82ff;
+    --sun: #ffd27a;
+    --income: #3fdb98;
+    --expense: #ff9a5c;
+    --net: #6a8bff;
+    --grid: #1a2539;
+    --chart-line: #5cf0b0;
+    --chart-fill: #2fbf7d;
+    --good: #4fd88f;
+    --good-soft: #10291d;
+    --bad: #ff7a66;
+    --bad-soft: #2e1714;
+    --warn: #f3b84a;
+    --warn-soft: #2c2210;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.3), 0 24px 48px -16px rgb(0 0 0 / 0.6);
+    --ill-sky-1: #13213a;
+    --ill-sky-2: #1c2d4c;
+    --ill-sun: #ffd98a;
+    --ill-hill-1: #1d3b45;
+    --ill-hill-2: #1b4a3d;
+    --ill-hill-3: #17583f;
+    --ill-hill-4: #0f3f2c;
+    --ill-tree: #0c2f22;
+    --ill-water: #1b3150;
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0a0f1a;
-  --surface: #121a2a;
-  --surface-2: #182236;
-  --surface-3: #222e45;
-  --line: #222d42;
-  --ink: #eef2f8;
-  --ink-2: #c2cad8;
-  --muted: #8390a6;
-  /* Navy is too dark to read on dark surfaces: brighter fill, light text tone. */
-  --brand: #3f66b8;
-  --brand-ink: #ffffff;
-  --brand-fg: #8fb0f0;
-  --brand-soft: #172645;
-  --hero: #172a52;
+  --bg: #0a101c;
+  --bg-glow: radial-gradient(1000px 520px at 90% -10%, rgb(46 180 120 / 0.12), transparent 60%), radial-gradient(800px 480px at -10% 110%, rgb(91 120 255 / 0.08), transparent 60%);
+  --surface: #111a2a;
+  --surface-2: #172236;
+  --surface-3: #212e46;
+  --sidebar: #0d1523;
+  --line: #1e2a40;
+  --line-strong: #2a3852;
+  --ink: #edf3f0;
+  --ink-2: #c1ccc8;
+  --muted: #8593a5;
+  --brand: #4fd88f;
+  --brand-ink: #05281a;
+  --brand-fg: #62e3a0;
+  --brand-soft: #12301f;
+  --brand-glow: rgb(79 216 143 / 0.28);
+  --hero: #102a1e;
   --hero-ink: #ffffff;
   --hero-line: rgb(255 255 255 / 0.08);
-  --income: #199e70;
-  --expense: #d95926;
-  --net: #3987e5;
-  --grid: #1d2639;
-  --good: #34c38f;
-  --good-soft: #10291f;
-  --bad: #f06a6a;
-  --bad-soft: #2d1414;
-  --warn: #e0a028;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  --sage: #6f9a78;
+  --emerald: #2fbf7d;
+  --mint: #5cf0b0;
+  --peach: #ff9c63;
+  --sky: #66b4ff;
+  --cobalt: #5b7cff;
+  --violet: #9d82ff;
+  --sun: #ffd27a;
+  --income: #3fdb98;
+  --expense: #ff9a5c;
+  --net: #6a8bff;
+  --grid: #1a2539;
+  --chart-line: #5cf0b0;
+  --chart-fill: #2fbf7d;
+  --good: #4fd88f;
+  --good-soft: #10291d;
+  --bad: #ff7a66;
+  --bad-soft: #2e1714;
+  --warn: #f3b84a;
+  --warn-soft: #2c2210;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.3), 0 24px 48px -16px rgb(0 0 0 / 0.6);
+  --ill-sky-1: #13213a;
+  --ill-sky-2: #1c2d4c;
+  --ill-sun: #ffd98a;
+  --ill-hill-1: #1d3b45;
+  --ill-hill-2: #1b4a3d;
+  --ill-hill-3: #17583f;
+  --ill-hill-4: #0f3f2c;
+  --ill-tree: #0c2f22;
+  --ill-water: #1b3150;
 }
 
 @theme inline {
-  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Newsreader Variable', 'Newsreader', 'Iowan Old Style', Georgia, serif;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-sidebar: var(--sidebar);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
@@ -113,6 +199,14 @@
   --color-hero: var(--hero);
   --color-hero-ink: var(--hero-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-sage: var(--sage);
+  --color-emerald: var(--emerald);
+  --color-mint: var(--mint);
+  --color-peach: var(--peach);
+  --color-sky: var(--sky);
+  --color-cobalt: var(--cobalt);
+  --color-violet: var(--violet);
+  --color-sun: var(--sun);
   --color-income: var(--income);
   --color-expense: var(--expense);
   --color-net: var(--net);
@@ -121,6 +215,7 @@
   --color-bad: var(--bad);
   --color-bad-soft: var(--bad-soft);
   --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
 }
 
 html,
@@ -128,20 +223,47 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  background-image: var(--bg-glow);
+  background-attachment: fixed;
+}
+::selection {
+  background: var(--brand-glow);
 }
 
 .num {
   font-variant-numeric: tabular-nums;
 }
 
-/* Headings and headline figures get the display face; body copy stays in Figtree. */
+/* Editorial headlines: a warm serif, set large and tight. */
 h1,
 h2,
 .font-display {
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  letter-spacing: -0.02em;
+  font-weight: 450;
+  letter-spacing: -0.015em;
+}
+
+/* Headline figures stay in the sans: tabular, tight and confident. */
+.figure {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small uppercase labels above sections and figures. */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .card {
@@ -153,6 +275,33 @@ h2,
   box-shadow: var(--shadow);
 }
 
+/* A softer, borderless panel for content that only needs a little separation. */
+.panel {
+  min-width: 0;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border-radius: 1.25rem;
+}
+
+/* Interactive rows: a calm hover that lifts the surface rather than the layout. */
+.row-hover {
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.row-hover:hover {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* A strategic glow, used for the one thing on a page that matters most. */
+.glow {
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px var(--line),
+    0 30px 80px -40px var(--brand-glow);
+}
+
 /* Recharts: recessive axes & focus ring cleanup */
 .recharts-cartesian-axis-tick-value {
   fill: var(--muted);
@@ -161,7 +310,8 @@ h2,
 .recharts-wrapper:focus,
 .recharts-surface:focus,
 .recharts-sector:focus,
-.recharts-rectangle:focus {
+.recharts-rectangle:focus,
+.recharts-wrapper *:focus {
   outline: none;
 }
 
@@ -203,6 +353,20 @@ h2,
   animation: page-in var(--motion-page) var(--ease-out) both;
 }
 
+/* Progress bars fill from the left once, when they first appear. */
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.grow-x {
+  transform-origin: left center;
+  animation: grow-x 700ms var(--ease-out) both;
+}
+
 /* Skeletons: wait 150ms before appearing so fast loads never flash. */
 @keyframes fade-in {
   from {
@@ -228,6 +392,7 @@ h2,
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
   .animate-pop,
+  .grow-x,
   .skeleton,
   .skeleton-in {
     animation: none;
@@ -241,4 +406,10 @@ input[type='number']::-webkit-outer-spin-button {
 }
 input[type='number'] {
   -moz-appearance: textfield;
+}
+
+/* Thin, quiet scrollbars for horizontal strips. */
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }

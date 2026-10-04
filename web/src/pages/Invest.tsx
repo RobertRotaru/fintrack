@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { Info, KeyRound, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, Tooltip } from 'recharts';
+import { ResponsiveContainer } from '../components/ResponsiveChart';
 import type { HabitSummary, InvestmentAdvice } from '@ft/core';
 import { api } from '../lib/api';
 import { useMoney, percent } from '../lib/format';
@@ -182,7 +183,7 @@ function Advice({ a, currency }: { a: InvestmentAdvice; currency: string }) {
           </div>
           <div className="rounded-2xl border border-line p-4">
             <p className="text-xs text-muted">Suggested to invest monthly</p>
-            <p className="mt-1 font-display text-3xl font-extrabold num">{money(a.monthlyInvestable, { currency })}</p>
+            <p className="mt-1 figure text-3xl num">{money(a.monthlyInvestable, { currency })}</p>
             <p className="text-xs text-muted">without touching your buffer or goals</p>
           </div>
         </div>

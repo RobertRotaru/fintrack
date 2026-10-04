@@ -8,24 +8,27 @@ import { Card, Empty, PageHeader, Segmented, clsx } from '../components/ui';
 import { loadGate } from '../components/states';
 
 const TONE = {
-  good: { cls: 'bg-good-soft text-good', label: 'Good news', Status: CircleCheck },
-  bad: { cls: 'bg-bad-soft text-bad', label: 'Heads up', Status: TriangleAlert },
-  neutral: { cls: 'bg-surface-2 text-ink-2', label: 'Worth knowing', Status: CircleMinus },
+  good: { cls: 'bg-good-soft text-good', label: 'Good news', Status: CircleCheck, accent: 'var(--emerald)' },
+  bad: { cls: 'bg-bad-soft text-bad', label: 'Heads up', Status: TriangleAlert, accent: 'var(--peach)' },
+  neutral: { cls: 'bg-surface-2 text-ink-2', label: 'Worth knowing', Status: CircleMinus, accent: 'var(--cobalt)' },
 } as const;
 
 export function InsightCard({ insight, compact }: { insight: Insight; compact?: boolean }) {
   const tone = TONE[insight.tone];
   return (
-    <div className={clsx('flex gap-3 rounded-2xl border border-line', compact ? 'p-3' : 'p-4 bg-surface')}>
-      <span className={clsx('flex shrink-0 items-center justify-center rounded-xl', tone.cls, compact ? 'size-9' : 'size-11')}>
+    <div className={clsx('flex gap-4 rounded-[20px] border border-line', compact ? 'p-3' : 'row-hover p-5 bg-surface/70')}>
+      <span
+        className={clsx('flex shrink-0 items-center justify-center rounded-2xl', compact ? 'size-9' : 'size-12')}
+        style={{ background: `color-mix(in oklab, ${tone.accent} 15%, var(--surface))`, color: tone.accent }}
+      >
         <Icon name={insight.icon} className={compact ? 'size-4' : 'size-5'} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <p className={clsx('font-semibold', compact ? 'text-sm' : '')}>{insight.title}</p>
-          {insight.metric && <span className={clsx('shrink-0 rounded-lg px-2 py-0.5 text-xs font-bold num', tone.cls)}>{insight.metric}</span>}
+          <p className={clsx('font-semibold tracking-[-0.01em]', compact ? 'text-sm' : 'text-[15px]')}>{insight.title}</p>
+          {insight.metric && <span className={clsx('shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold num', tone.cls)}>{insight.metric}</span>}
         </div>
-        <p className={clsx('mt-0.5 text-muted', compact ? 'text-xs line-clamp-2' : 'text-sm')}>{insight.detail}</p>
+        <p className={clsx('mt-1 text-muted', compact ? 'text-xs line-clamp-2' : 'text-sm leading-relaxed')}>{insight.detail}</p>
         {!compact && (
           <p className={clsx('mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider', insight.tone === 'neutral' ? 'text-muted' : insight.tone === 'good' ? 'text-good' : 'text-bad')}>
             <tone.Status className="size-3.5" /> {tone.label}
@@ -56,19 +59,16 @@ export function Insights() {
       <PageHeader title="Insights" subtitle="Patterns we spotted in how you earn, spend and save." />
       {insights.length ? (
         <>
-          <div className="mb-5 grid grid-cols-3 gap-3">
-            {[
-              { l: 'Insights', v: insights.length, c: 'text-ink' },
-              { l: 'Good news', v: good, c: 'text-good' },
-              { l: 'Heads up', v: bad, c: 'text-bad' },
-            ].map((s) => (
-              <Card key={s.l} className="!p-4">
-                <p className="text-xs text-muted">{s.l}</p>
-                <p className={clsx('text-2xl font-bold num', s.c)}>{s.v}</p>
-              </Card>
-            ))}
-          </div>
-          <div className="mb-5 overflow-x-auto">
+          <section className="mb-10">
+            <h2 className="text-[34px] leading-tight" data-testid="insights-headline">
+              {insights.length} useful insight{insights.length === 1 ? '' : 's'}.
+            </h2>
+            <p className="mt-2 text-[15px] text-muted">
+              Here are a few things we noticed in your finances —{' '}
+              <span className="font-medium text-good">{good} good news</span>, <span className="font-medium text-bad">{bad} worth a look</span>.
+            </p>
+          </section>
+          <div className="mb-6 overflow-x-auto">
             <Segmented<Group>
               value={group}
               onChange={setGroup}

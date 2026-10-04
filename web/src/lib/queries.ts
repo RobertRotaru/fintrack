@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { normalize, setRates, type FxSnapshot, type Account, type Category, type Goal, type HabitSummary, type Household, type InvestmentAdvice, type Transaction, type Transfer } from '@ft/core';
+import { accountFlows, normalize, setRates, type FxSnapshot, type Account, type Category, type Goal, type HabitSummary, type Household, type InvestmentAdvice, type Transaction, type Transfer } from '@ft/core';
 import { api } from './api';
 import { useUser } from './auth';
 
@@ -50,6 +50,17 @@ export function useTxs() {
   // fx.dataUpdatedAt is a dependency so totals recompute when new rates arrive.
   const txs = useMemo(() => normalize(q.data ?? [], user.baseCurrency), [q.data, user.baseCurrency, fx.dataUpdatedAt]);
   return { ...q, txs };
+}
+
+/**
+ * Balance movements per account (transactions and transfers), for net-worth
+ * history and trends. Transfers are optional: if they fail to load, history
+ * is drawn from transactions alone rather than blocking the page.
+ */
+export function useFlows() {
+  const tx = useTransactions();
+  const tr = useTransfers();
+  return useMemo(() => accountFlows(tx.data ?? [], tr.data ?? []), [tx.data, tr.data]);
 }
 
 /** Mutation that invalidates the given query keys on success. */

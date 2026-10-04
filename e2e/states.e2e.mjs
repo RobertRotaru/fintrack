@@ -6,6 +6,7 @@
  *
  *   E2E_EMAIL / E2E_PASSWORD  an account with data (e.g. after "Load demo data")
  *   CHROME_PATH               Chrome/Chromium executable
+ *   CHROME_ARGS               extra launch flags, space-separated (e.g. --no-sandbox in containers)
  */
 import puppeteer from 'puppeteer-core';
 const OUT = process.env.OUT_DIR;
@@ -26,7 +27,7 @@ const check = (name, ok, detail = '') => {
 const login = async (email, password) =>
   (await (await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })).json()).token;
 
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: (process.env.CHROME_ARGS ?? '').split(' ').filter(Boolean) });
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 800 });
 const token = await login(process.env.E2E_EMAIL, process.env.E2E_PASSWORD);
@@ -203,6 +204,7 @@ const empties = {
   '/': "Let's set up your money",
   '/accounts': 'No accounts yet',
   '/transactions': 'No transactions yet',
+  '/spending': 'No spending yet',
   '/reports': 'No data to report yet',
   '/insights': 'No insights yet',
   '/projections': 'Not enough history yet',

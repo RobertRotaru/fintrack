@@ -83,7 +83,7 @@ export function AccountCard({
         </div>
         <div className="mt-auto">
           <p className={clsx('font-semibold truncate', compact ? 'text-sm' : 'text-base')}>{account.name || 'Account name'}</p>
-          <p className={clsx('font-display font-bold num tracking-tight', compact ? 'text-xl' : 'text-2xl')}>{formatMoney(account.balance, account.currency)}</p>
+          <p className={clsx('figure num tracking-tight', compact ? 'text-xl' : 'text-2xl')}>{formatMoney(account.balance, account.currency)}</p>
           {used !== null && (
             <div className="mt-2">
               <div className="h-1.5 overflow-hidden rounded-full" style={{ background: `${fg}33` }}>

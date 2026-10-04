@@ -1,17 +1,28 @@
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CalendarClock, Check, ImagePlus, Minus, PartyPopper, Plus, Trash2, Users } from 'lucide-react';
+import { CalendarClock, Check, ChevronRight, ImagePlus, Minus, PartyPopper, Plus, Trash2, Users } from 'lucide-react';
 import { CURRENCIES, GOAL_ICONS, PERSONAL_COLORS, convert, etaFor, goalPlan, parseDate, project, type Frequency, type Goal } from '@ft/core';
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
 import { formatDay, parseAmount, resizeImage, useMoney, percent } from '../lib/format';
 import { Icon } from '../lib/icons';
 import { keys, useApiMutation, useGoals, useHousehold, useTransactions, useTxs } from '../lib/queries';
-import { Button, Card, ColorPicker, Empty, Field, IconPicker, Input, Modal, PageHeader, ProgressRing, Segmented, Select, clsx } from '../components/ui';
+import { Button, Card, ColorPicker, Empty, Field, IconPicker, Input, Modal, ProgressBar, ProgressRing, Segmented, Select, clsx } from '../components/ui';
+import { PathScene } from '../components/illustrations';
 import { loadGate } from '../components/states';
 
 const fmtDate = (iso: string | null) => (iso ? parseDate(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—');
 const monthsUntil = (iso: string | null) => (iso ? Math.max(0, Math.round((parseDate(iso).getTime() - Date.now()) / (30.44 * 86_400_000))) : null);
+
+/** "2 years left", "8 months left", "this month" — friendly time to a date. */
+export function timeLeft(iso: string, now = new Date()): string {
+  const months = Math.round((parseDate(iso).getTime() - now.getTime()) / (30.44 * 86_400_000));
+  if (months <= 0) return 'this month';
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} left`;
+  // Half-year precision under three years ("1.5 years"), whole years after that.
+  const years = months < 36 ? Math.round(months / 6) / 2 : Math.round(months / 12);
+  return `${years} year${years === 1 ? '' : 's'} left`;
+}
 
 /** Average monthly surplus in the goal's currency, from the user's real history. */
 function useSurplus(currency: string) {
@@ -36,15 +47,28 @@ export function Goals() {
 
   return (
     <div>
-      <PageHeader
-        title="Goals"
-        subtitle="Save for the things you want — we'll plan the route and tell you when you'll get there."
-        action={
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" /> New goal
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <h1 className="text-4xl sm:text-[44px] leading-[1.05]">Goals</h1>
+        <Button variant="secondary" onClick={() => setCreating(true)}>
+          <Plus className="size-4" /> New goal
+        </Button>
+      </div>
+
+      <section className="relative mb-14 overflow-hidden rounded-[32px] border border-line bg-surface shadow-[var(--shadow)]">
+        <PathScene className="absolute inset-y-0 right-0 h-full w-full sm:w-[62%] [mask-image:linear-gradient(to_right,transparent,black_30%)]" />
+        <div className="relative max-w-md p-8 sm:p-12">
+          <h2 className="text-5xl leading-[1.02] tracking-[-0.025em] sm:text-[56px]">
+            Big dreams.
+            <br />
+            Real plans.
+          </h2>
+          <p className="mt-4 text-[17px] text-ink-2">Set a goal and turn your plans into progress. We’ll plan the route and tell you when you’ll get there.</p>
+          <Button size="lg" className="mt-7" onClick={() => setCreating(true)}>
+            <Plus className="size-4" /> Add goal
           </Button>
-        }
-      />
+        </div>
+      </section>
+
       {!goals.length ? (
         <Card>
           <Empty icon="target" title="What are you saving for?" action={<Button onClick={() => setCreating(true)}>Create a goal</Button>}>
@@ -53,21 +77,30 @@ export function Goals() {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {active.map((g) => (
-              <GoalCard key={g.id} goal={g} onClick={() => setOpenId(g.id)} />
-            ))}
-          </div>
+          {active.length > 0 && (
+            <>
+              <h2 className="mb-5 text-[28px] leading-tight">Your goals</h2>
+              <ul className="space-y-4">
+                {active.map((g) => (
+                  <li key={g.id}>
+                    <GoalCard goal={g} onClick={() => setOpenId(g.id)} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {done.length > 0 && (
             <>
-              <h2 className="mb-3 mt-10 flex items-center gap-2 font-semibold">
-                <PartyPopper className="size-5 text-brand-fg" /> Completed
+              <h2 className="mb-5 mt-14 flex items-center gap-2 text-[28px] leading-tight">
+                <PartyPopper className="size-6 text-brand-fg" /> Reached
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="space-y-4">
                 {done.map((g) => (
-                  <GoalCard key={g.id} goal={g} onClick={() => setOpenId(g.id)} />
+                  <li key={g.id}>
+                    <GoalCard goal={g} onClick={() => setOpenId(g.id)} />
+                  </li>
                 ))}
-              </div>
+              </ul>
             </>
           )}
         </>
@@ -87,34 +120,55 @@ function GoalCard({ goal, onClick }: { goal: Goal; onClick: () => void }) {
   const surplus = useSurplus(goal.currency);
   const plan = goalPlan(goal, surplus);
   const eta = plan.actualPace?.eta ?? plan.plans.find((p) => p.id === 'balanced')?.eta ?? null;
+  const pct = Math.round(plan.progress * 100);
+  const when = goal.completedAt
+    ? `Reached ${formatDay(goal.completedAt.slice(0, 10))}`
+    : plan.overdue
+      ? 'Deadline passed'
+      : goal.deadline
+        ? timeLeft(goal.deadline)
+        : eta
+          ? timeLeft(eta) === 'this month'
+            ? 'Almost there at your pace'
+            : `About ${timeLeft(eta).replace(' left', '')} at your pace`
+          : 'Add savings to get an ETA';
   return (
-    <button type="button" onClick={onClick} className="card group overflow-hidden text-left transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer">
-      <div className="relative h-24 overflow-hidden" style={{ background: `linear-gradient(135deg, ${goal.color}, color-mix(in oklab, ${goal.color} 60%, black))` }}>
-        {goal.image && <img src={goal.image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        {!goal.image && <Icon name={goal.icon} className="absolute -right-3 -bottom-4 size-24 text-white/20" />}
-        {goal.householdId && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
-            <Users className="size-3" /> Family goal
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-4 p-5">
-        <ProgressRing value={plan.progress} color={goal.color} size={68}>
-          {goal.completedAt ? <Check className="size-6" style={{ color: goal.color }} /> : <span className="text-sm font-bold num">{Math.round(plan.progress * 100)}%</span>}
-        </ProgressRing>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{goal.name}</p>
-          <p className="text-sm num">
-            <b>{money(goal.saved, { currency: goal.currency })}</b> <span className="text-muted">/ {money(goal.targetAmount, { currency: goal.currency })}</span>
+    <button type="button" onClick={onClick} className="row-hover group flex w-full items-center gap-5 rounded-[24px] border border-line bg-surface/70 p-5 text-left sm:p-6 cursor-pointer" data-testid="goal-row">
+      {goal.image ? (
+        <img src={goal.image} alt="" className="size-16 shrink-0 rounded-2xl object-cover" />
+      ) : (
+        <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl" style={{ background: `color-mix(in oklab, ${goal.color} 16%, var(--surface))`, color: goal.color }}>
+          {goal.completedAt ? <Check className="size-7" /> : <Icon name={goal.icon} className="size-7" />}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="flex items-center gap-2 truncate text-lg font-semibold tracking-[-0.01em]">
+            {goal.name}
+            {goal.householdId && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-brand-fg">
+                <Users className="size-3" /> Family
+              </span>
+            )}
           </p>
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted">
-            <CalendarClock className="size-3.5" />
-            {goal.completedAt ? `Reached ${formatDay(goal.completedAt.slice(0, 10))}` : eta ? `ETA ${fmtDate(eta)}` : 'Add savings to get an ETA'}
-            {goal.deadline && !goal.completedAt && (plan.overdue ? <span className="font-medium text-bad">· overdue</span> : <span>· due {fmtDate(goal.deadline)}</span>)}
+          <p className="text-sm text-muted num">
+            <b className="font-semibold text-ink">{money(goal.saved, { currency: goal.currency })}</b> of {money(goal.targetAmount, { currency: goal.currency })}
           </p>
         </div>
+        <div className="mt-3 flex items-center gap-4">
+          <div className="flex-1">
+            <ProgressBar value={plan.progress} color={goal.color} size="lg" label={`${goal.name} progress`} />
+          </div>
+          <span className="figure w-12 text-right text-lg">{pct}%</span>
+        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+          <CalendarClock className="size-3.5" />
+          <span className={clsx(plan.overdue && !goal.completedAt && 'font-medium text-bad')}>{when}</span>
+          {goal.deadline && !goal.completedAt && !plan.overdue && <span>· due {fmtDate(goal.deadline)}</span>}
+          {!goal.completedAt && !plan.done && plan.required && <span className="hidden sm:inline">· needs {money(plan.required.monthly, { currency: goal.currency })}/mo</span>}
+        </p>
       </div>
+      <ChevronRight className="size-5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-ink" />
     </button>
   );
 }
@@ -165,7 +219,7 @@ function GoalDetail({ goal, onClose }: { goal: Goal; onClose: () => void }) {
           </div>
         </ProgressRing>
         <div className="flex-1 text-center sm:text-left">
-          <p className="font-display text-3xl font-extrabold tracking-tight num">{m(goal.saved)}</p>
+          <p className="figure text-3xl  tracking-tight num">{m(goal.saved)}</p>
           <p className="text-muted">
             of {m(goal.targetAmount)} · <b className="text-ink">{m(plan.remaining)}</b> to go
           </p>
