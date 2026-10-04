@@ -108,7 +108,11 @@ export function Home() {
                 <p className="flex items-center gap-1 text-[11px] font-medium text-white/70">
                   <I className="size-3.5" /> {l}
                 </p>
-                <p className="mt-0.5 truncate text-sm font-bold num sm:text-base">{money(v, { compact: Math.abs(v) >= 100000 })}</p>
+                <p className="mt-0.5 truncate text-sm font-bold num sm:text-base" title={money(v)}>
+                  {/* Phones: number only — the currency is already in the headline above. */}
+                  <span className="sm:hidden">{moneyParts(v, user.baseCurrency).number}</span>
+                  <span className="hidden sm:inline">{money(v, { compact: Math.abs(v) >= 100000 })}</span>
+                </p>
               </div>
             ))}
           </div>

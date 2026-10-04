@@ -49,6 +49,20 @@ reports that explain themselves, goals with real ETAs, and an AI coach that read
   </tr>
 </table>
 
+### On a phone, and when things aren't perfect
+
+<table>
+  <tr>
+    <td width="26%" rowspan="2"><img src="docs/screenshots/mobile-home.jpg" alt="Fintrack on a phone"><br><sub><b>Phone</b> — bottom navigation with a central add button; the headline figure scales to fit.</sub></td>
+    <td width="37%"><img src="docs/screenshots/signin.jpg" alt="Sign in"><br><sub><b>Sign in</b></sub></td>
+    <td width="37%"><img src="docs/screenshots/state-empty.jpg" alt="Empty state"><br><sub><b>First run</b> — every page has a helpful empty state; demo data is one click away.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/state-loading.jpg" alt="Loading skeleton"><br><sub><b>Loading</b> — page-shaped skeletons, only if loading takes longer than 150ms.</sub></td>
+    <td><img src="docs/screenshots/state-error.jpg" alt="Error state"><br><sub><b>Errors</b> — a server error never looks like empty data; one tap to retry.</sub></td>
+  </tr>
+</table>
+
 ## How it's built
 
 ```
