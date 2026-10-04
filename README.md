@@ -64,14 +64,17 @@ fintrack/
 The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app
 uses the exact same logic and the same API.
 
-**Tested** with 140 Vitest tests: unit tests for the analytics (dates, rounding, reports, projections,
-goal plans, insights) and API integration tests covering validation, boundary values, permissions
-and family-sharing isolation against a throwaway database.
+**Tested** with 167 Vitest tests — unit tests for the analytics, API integration tests (validation,
+boundary values, permissions, family-sharing isolation) and UI component tests for loading, empty and
+error states — plus headless-Chrome end-to-end checks for page transitions, offline behaviour and
+failure recovery.
 
 **Design notes**
 
 - **Type:** Bricolage Grotesque for headings and headline figures, Figtree for everything else, with tabular figures wherever amounts line up.
-- **Colour:** chart series use a colour-blind-safe palette validated in both light and dark themes. Good/bad states always come with an icon or label, never colour alone.
+- **Colour:** navy is the one brand colour for primary actions and the headline card, with contrast checked in both themes. Chart series use a colour-blind-safe palette; good/bad states always come with an icon or label, never colour alone.
+- **Motion:** a 220ms fade-and-rise between pages, animating only opacity and transform, and switched off for anyone who prefers reduced motion.
+- **States:** page-shaped loading skeletons (shown only if loading takes over 150ms), friendly empty states, and distinct error screens for server errors, being offline, a missing page, or a page that failed to download.
 - **Responsive:** sidebar on desktop; bottom navigation with a central add button on phones.
 
 **Data & privacy**
