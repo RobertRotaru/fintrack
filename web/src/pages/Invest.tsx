@@ -6,15 +6,16 @@ import { api } from '../lib/api';
 import { useMoney, percent } from '../lib/format';
 import { keys, useApiMutation, useInvestment } from '../lib/queries';
 import { ChartTooltip } from '../components/charts';
-import { Button, Card, CardHeader, PageHeader, Spinner, clsx } from '../components/ui';
+import { Button, Card, CardHeader, PageHeader, Empty, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 /** Reference categorical slots, in fixed order (validated for CVD separation). */
 const SLOTS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
 
 const RISK = {
   conservative: { label: 'Conservative', cls: 'bg-good-soft text-good' },
-  moderate: { label: 'Moderate', cls: 'bg-brand-soft text-brand' },
-  growth: { label: 'Growth', cls: 'bg-brand-soft text-brand' },
+  moderate: { label: 'Moderate', cls: 'bg-brand-soft text-brand-fg' },
+  growth: { label: 'Growth', cls: 'bg-brand-soft text-brand-fg' },
   aggressive: { label: 'Aggressive', cls: 'bg-bad-soft text-bad' },
 };
 
@@ -25,10 +26,12 @@ const READINESS = {
 };
 
 export function Invest() {
-  const { data, isLoading } = useInvestment();
+  const investQ = useInvestment();
+  const { data } = investQ;
   const analyze = useApiMutation(() => api<{ advice: InvestmentAdvice }>('/ai/investment', { method: 'POST' }), [keys.investment]);
 
-  if (isLoading || !data) return <Spinner />;
+  const gate = loadGate([investQ], 'charts');
+  if (gate || !data) return gate;
   const { summary, advice, configured } = data;
 
   async function run() {
@@ -74,11 +77,19 @@ export function Invest() {
         </Card>
       )}
 
-      <Snapshot s={summary} />
+      {summary.monthsAnalyzed < 1 ? (
+        <Card>
+          <Empty icon="trending-up" title="Not enough history yet">
+            The coach looks at complete months of income and spending. Keep tracking — it unlocks after your first full month.
+          </Empty>
+        </Card>
+      ) : (
+        <Snapshot s={summary} />
+      )}
 
       {analyze.isPending && (
         <Card className="flex items-center gap-4">
-          <Sparkles className="size-6 animate-pulse text-brand" />
+          <Sparkles className="size-6 animate-pulse text-brand-fg" />
           <div>
             <p className="font-semibold">Reviewing {summary.monthsAnalyzed} months of habits…</p>
             <p className="text-sm text-muted">This usually takes 20–40 seconds.</p>
@@ -156,7 +167,7 @@ function Advice({ a, currency }: { a: InvestmentAdvice; currency: string }) {
       <Card className="relative overflow-hidden">
         <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-brand/10 blur-3xl" />
         <div className="flex flex-wrap items-center gap-2">
-          <Sparkles className="size-5 text-brand" />
+          <Sparkles className="size-5 text-brand-fg" />
           <h2 className="text-lg font-bold">Your analysis</h2>
           <span className={clsx('rounded-full px-2.5 py-0.5 text-xs font-semibold', risk.cls)}>{risk.label} profile</span>
           <span className="ml-auto text-xs text-muted">{new Date(a.generatedAt).toLocaleString()}</span>
@@ -226,14 +237,14 @@ function Advice({ a, currency }: { a: InvestmentAdvice; currency: string }) {
         <ol className="space-y-3">
           {a.recommendations.map((r, i) => (
             <li key={r.title} className="flex gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">{i + 1}</span>
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-fg">{i + 1}</span>
               <div>
                 <p className="flex items-center gap-2 font-semibold">
                   {r.title}
                   <span
                     className={clsx(
                       'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase',
-                      r.priority === 'high' ? 'bg-bad-soft text-bad' : r.priority === 'medium' ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted',
+                      r.priority === 'high' ? 'bg-bad-soft text-bad' : r.priority === 'medium' ? 'bg-brand-soft text-brand-fg' : 'bg-surface-2 text-muted',
                     )}
                   >
                     {r.priority}

@@ -6,8 +6,9 @@ import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
 import { formatDay, parseAmount, resizeImage, useMoney, percent } from '../lib/format';
 import { Icon } from '../lib/icons';
-import { keys, useApiMutation, useGoals, useHousehold, useTxs } from '../lib/queries';
-import { Button, Card, ColorPicker, Empty, Field, IconPicker, Input, Modal, PageHeader, ProgressRing, Segmented, Select, Spinner, clsx } from '../components/ui';
+import { keys, useApiMutation, useGoals, useHousehold, useTransactions, useTxs } from '../lib/queries';
+import { Button, Card, ColorPicker, Empty, Field, IconPicker, Input, Modal, PageHeader, ProgressRing, Segmented, Select, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 const fmtDate = (iso: string | null) => (iso ? parseDate(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—');
 const monthsUntil = (iso: string | null) => (iso ? Math.max(0, Math.round((parseDate(iso).getTime() - Date.now()) / (30.44 * 86_400_000))) : null);
@@ -20,14 +21,18 @@ function useSurplus(currency: string) {
 }
 
 export function Goals() {
-  const { data: goals = [], isLoading } = useGoals();
+  const goalsQ = useGoals();
+  // Saving plans are computed from transaction history.
+  const txQ = useTransactions();
+  const goals = goalsQ.data ?? [];
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const open = goals.find((g) => g.id === openId) ?? null;
   const active = goals.filter((g) => !g.completedAt);
   const done = goals.filter((g) => g.completedAt);
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([goalsQ, txQ], 'cards');
+  if (gate) return gate;
 
   return (
     <div>
@@ -56,7 +61,7 @@ export function Goals() {
           {done.length > 0 && (
             <>
               <h2 className="mb-3 mt-10 flex items-center gap-2 font-semibold">
-                <PartyPopper className="size-5 text-brand" /> Completed
+                <PartyPopper className="size-5 text-brand-fg" /> Completed
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {done.map((g) => (

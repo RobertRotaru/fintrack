@@ -6,22 +6,26 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { convert, generateInsights, pctChange, goalPlan, inMonth, monthKey, monthLabel, monthlyReport, project, type Transaction } from '@ft/core';
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
-import { greeting, useMoney } from '../lib/format';
+import { greeting, moneyParts, useMoney } from '../lib/format';
 import { Icon } from '../lib/icons';
 import { useAccounts, useApiMutation, useGoals, useTransactions, useTxs, keys } from '../lib/queries';
 import { AccountCard } from '../components/AccountCard';
 import { ChartTooltip, SERIES } from '../components/charts';
 import { QuickAdd } from '../components/QuickAdd';
 import { TransactionForm, TransactionList } from '../components/Transactions';
-import { Button, Card, CardHeader, Delta, Empty, Modal, ProgressBar, Spinner, clsx } from '../components/ui';
+import { Button, Card, CardHeader, Delta, Empty, Modal, ProgressBar, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 import { InsightCard } from './Insights';
 
 export function Home() {
   const user = useUser();
   const money = useMoney();
   const navigate = useNavigate();
-  const { data: accounts, isLoading } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
+  const accountsQ = useAccounts();
+  const txQ = useTransactions();
+  const accounts = accountsQ.data;
+  const transactions = txQ.data ?? [];
+  // Goals are a side panel: if they fail to load, the panel just stays hidden.
   const { data: goals = [] } = useGoals();
   const { txs } = useTxs();
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -33,7 +37,8 @@ export function Home() {
   const insights = useMemo(() => generateInsights(txs, user.baseCurrency).slice(0, 3), [txs, user.baseCurrency]);
   const projection = useMemo(() => project(txs, 1), [txs]);
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([accountsQ, txQ], 'dashboard');
+  if (gate) return gate;
 
   const active = (accounts ?? []).filter((a) => !a.archived);
   const netWorth = active.reduce((s, a) => s + convert(a.balance, a.currency, user.baseCurrency), 0);
@@ -87,23 +92,23 @@ export function Home() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr] [&>*]:min-w-0">
         {/* Hero: net worth + month */}
-        <div className="relative overflow-hidden rounded-3xl bg-[radial-gradient(120%_120%_at_100%_0%,#a5b4fc_0%,#6366f1_45%,#3730a3_100%)] p-6 text-white shadow-xl shadow-brand/20">
-          <p className="text-sm font-medium text-white/70">Net worth</p>
-          <p className="mt-1 font-display text-4xl font-extrabold tracking-tight num">{money(netWorth)}</p>
+        <div className="@container relative overflow-hidden rounded-3xl bg-hero p-6 text-hero-ink shadow-lg ring-1 ring-[var(--hero-line)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/65">Net worth</p>
+          <HeroAmount amount={netWorth} currency={user.baseCurrency} />
           <p className="mt-1 text-xs text-white/60">across {active.length} account{active.length > 1 ? 's' : ''}</p>
-          <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
             {[
               { l: 'Income', v: report.income, i: ArrowDownRight },
               { l: 'Spent', v: report.expense, i: ArrowUpRight },
               { l: 'Left', v: report.net, i: Wallet },
             ].map(({ l, v, i: I }) => (
-              <div key={l} className="rounded-2xl bg-white/12 p-3 backdrop-blur">
+              <div key={l} className="min-w-0 rounded-2xl bg-white/12 p-2.5 sm:p-3">
                 <p className="flex items-center gap-1 text-[11px] font-medium text-white/70">
                   <I className="size-3.5" /> {l}
                 </p>
-                <p className="mt-0.5 text-base font-bold num truncate">{money(v, { compact: Math.abs(v) >= 100000 })}</p>
+                <p className="mt-0.5 truncate text-sm font-bold num sm:text-base">{money(v, { compact: Math.abs(v) >= 100000 })}</p>
               </div>
             ))}
           </div>
@@ -137,7 +142,7 @@ export function Home() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold">Accounts</h2>
-          <Link to="/accounts" className="flex items-center gap-1 text-sm font-medium text-brand">
+          <Link to="/accounts" className="flex items-center gap-1 text-sm font-medium text-brand-fg">
             Manage <ArrowRight className="size-4" />
           </Link>
         </div>
@@ -149,19 +154,19 @@ export function Home() {
           ))}
           <button
             onClick={() => navigate('/accounts?new=1')}
-            className="flex aspect-[1.75] w-40 shrink-0 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line text-sm font-medium text-muted hover:border-brand hover:text-brand cursor-pointer"
+            className="flex aspect-[1.75] w-40 shrink-0 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line text-sm font-medium text-muted hover:border-brand hover:text-brand-fg cursor-pointer"
           >
             <Plus className="size-5" /> New account
           </button>
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <Card>
           <CardHeader
             title="Recent activity"
             action={
-              <Link to="/transactions" className="flex items-center gap-1 text-sm font-medium text-brand">
+              <Link to="/transactions" className="flex items-center gap-1 text-sm font-medium text-brand-fg">
                 All <ArrowRight className="size-4" />
               </Link>
             }
@@ -203,7 +208,7 @@ export function Home() {
             <CardHeader
               title="Insights"
               action={
-                <Link to="/insights" className="flex items-center gap-1 text-sm font-medium text-brand">
+                <Link to="/insights" className="flex items-center gap-1 text-sm font-medium text-brand-fg">
                   All <ArrowRight className="size-4" />
                 </Link>
               }
@@ -224,7 +229,7 @@ export function Home() {
               <CardHeader
                 title="Goals"
                 action={
-                  <Link to="/goals" className="flex items-center gap-1 text-sm font-medium text-brand">
+                  <Link to="/goals" className="flex items-center gap-1 text-sm font-medium text-brand-fg">
                     All <ArrowRight className="size-4" />
                   </Link>
                 }
@@ -262,5 +267,24 @@ export function Home() {
         Tip: press <kbd className="rounded border border-line px-1">N</kbd> anywhere to add a transaction.
       </p>
     </div>
+  );
+}
+
+/**
+ * The headline figure. Sized against its card (container query units) so a
+ * long amount still fits on a phone, with the currency de-emphasised.
+ */
+function HeroAmount({ amount, currency }: { amount: number; currency: string }) {
+  const { currency: label, number, before } = moneyParts(amount, currency);
+  const cur = <span className="text-[0.42em] font-semibold text-white/70 tracking-normal">{label}</span>;
+  return (
+    <p
+      className="mt-1 flex items-baseline gap-[0.18em] whitespace-nowrap font-display font-extrabold leading-none tracking-tight num text-[clamp(1.5rem,11cqi,4rem)]"
+      aria-label={`${number} ${label}`}
+    >
+      {before && cur}
+      <span>{number}</span>
+      {!before && cur}
+    </p>
   );
 }

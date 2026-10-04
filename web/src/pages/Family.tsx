@@ -10,13 +10,16 @@ import { keys, useAccounts, useApiMutation, useHousehold, useTransactions } from
 import { AccountCard } from '../components/AccountCard';
 import { CategoryDonut, ChartTooltip, SERIES, axisProps } from '../components/charts';
 import { TransactionList } from '../components/Transactions';
-import { Button, Card, CardHeader, Empty, Field, IconButton, Input, PageHeader, Spinner, clsx } from '../components/ui';
+import { Button, Card, CardHeader, Empty, Field, IconButton, Input, PageHeader, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 const ALL = [keys.household, keys.accounts, keys.transactions, keys.goals, keys.transfers];
 
 export function Family() {
-  const { data: household, isLoading } = useHousehold();
-  if (isLoading) return <Spinner />;
+  const householdQ = useHousehold();
+  const household = householdQ.data;
+  const gate = loadGate([householdQ], 'cards');
+  if (gate) return gate;
   return household ? <FamilyHome household={household} /> : <NoFamily />;
 }
 
@@ -67,8 +70,10 @@ function NoFamily() {
 function FamilyHome({ household }: { household: Household }) {
   const user = useUser();
   const money = useMoney();
-  const { data: accounts = [] } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
+  const accountsQ = useAccounts();
+  const txQ = useTransactions();
+  const accounts = accountsQ.data ?? [];
+  const transactions = txQ.data ?? [];
   const me = household.members.find((m) => m.userId === user.id);
   const isOwner = me?.role === 'owner';
   const [name, setName] = useState(household.name);
@@ -95,6 +100,10 @@ function FamilyHome({ household }: { household: Household }) {
     return { income: totalOf(txs, 'income'), expense: totalOf(txs, 'expense'), categories: categoryTotals(txs, 'expense'), perMember };
   }, [sharedTx, user.baseCurrency, month, household.members, user.id]);
 
+  // Shared activity needs both lists; show their real state rather than an empty budget.
+  const gate = loadGate([accountsQ, txQ], 'cards');
+  if (gate) return gate;
+
   const ownerName = (ownerId: string) => (ownerId === user.id ? 'Yours' : household.members.find((m) => m.userId === ownerId)?.name.split(' ')[0]);
 
   return (
@@ -102,7 +111,7 @@ function FamilyHome({ household }: { household: Household }) {
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <Users className="size-7 text-brand" /> {household.name}
+            <Users className="size-7 text-brand-fg" /> {household.name}
           </span>
         }
         subtitle={`${household.members.length} member${household.members.length > 1 ? 's' : ''} · ${shared.length} shared account${shared.length === 1 ? '' : 's'}`}
@@ -114,7 +123,7 @@ function FamilyHome({ household }: { household: Household }) {
           <ul className="space-y-2">
             {household.members.map((m) => (
               <li key={m.userId} className="flex items-center gap-3 rounded-xl p-2 hover:bg-surface-2">
-                <span className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-brand to-fuchsia-500 font-bold text-white">{m.name[0]?.toUpperCase()}</span>
+                <span className="flex size-10 items-center justify-center rounded-full bg-brand font-bold text-brand-ink">{m.name[0]?.toUpperCase()}</span>
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1.5 text-sm font-semibold">
                     {m.name}
@@ -135,7 +144,7 @@ function FamilyHome({ household }: { household: Household }) {
             ))}
           </ul>
           <div className="mt-5 rounded-2xl bg-brand-soft p-4">
-            <p className="text-xs font-semibold text-brand">Invite code</p>
+            <p className="text-xs font-semibold text-brand-fg">Invite code</p>
             <div className="mt-1 flex items-center gap-2">
               <code className="flex-1 text-2xl font-bold tracking-[0.2em] text-ink">{household.inviteCode}</code>
               <IconButton

@@ -62,8 +62,8 @@ export function Card({ className, children, ...props }: { className?: string; ch
 
 export function CardHeader({ title, subtitle, action }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
-      <div>
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
         <h3 className="font-semibold text-ink">{title}</h3>
         {subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}
       </div>
@@ -181,7 +181,7 @@ export function Modal({
 export function Empty({ icon, title, children, action }: { icon: string; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 px-6">
-      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand-fg">
         <Icon name={icon} className="size-7" />
       </div>
       <h3 className="font-semibold text-ink">{title}</h3>

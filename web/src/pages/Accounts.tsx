@@ -8,14 +8,16 @@ import { useMoney } from '../lib/format';
 import { keys, useAccounts, useApiMutation, useHousehold } from '../lib/queries';
 import { AccountCard } from '../components/AccountCard';
 import { AccountForm } from '../components/AccountForm';
-import { Button, Card, Empty, Modal, PageHeader, Spinner } from '../components/ui';
+import { Button, Card, Empty, Modal, PageHeader } from '../components/ui';
+import { loadGate } from '../components/states';
 
 const LIABILITY = new Set(['credit', 'loan']);
 
 export function Accounts() {
   const user = useUser();
   const money = useMoney();
-  const { data: accounts = [], isLoading } = useAccounts();
+  const accountsQ = useAccounts();
+  const accounts = accountsQ.data ?? [];
   const { data: household } = useHousehold();
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState<Account | null>(null);
@@ -23,7 +25,8 @@ export function Accounts() {
   const creating = params.get('new') === '1';
   const archive = useApiMutation(({ id, archived }: { id: string; archived: boolean }) => api(`/accounts/${id}`, { method: 'PATCH', body: { archived } }), [keys.accounts]);
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([accountsQ], 'cards');
+  if (gate) return gate;
 
   const active = accounts.filter((a) => !a.archived);
   const archived = accounts.filter((a) => a.archived);

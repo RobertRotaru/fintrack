@@ -6,6 +6,8 @@ import { ApiError, api, getToken, setToken, setUnauthorizedHandler } from './api
 interface AuthState {
   user: User | null;
   loading: boolean;
+  /** The session check can't reach the server (it keeps retrying). */
+  offline: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: { name: string; email: string; password: string; country: string; baseCurrency: string }) => Promise<void>;
   logout: () => void;
@@ -18,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(!!getToken());
+  const [offline, setOffline] = useState(false);
 
   const logout = useCallback(() => {
     setToken(null);
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((u) => {
           if (cancelled) return;
           setUser(u);
+          setOffline(false);
           setLoading(false);
         })
         .catch((e) => {
@@ -44,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (e instanceof ApiError && e.status === 401) {
             logout();
             setLoading(false);
-          } else timer = setTimeout(check, 2000);
+          } else {
+            setOffline(true);
+            timer = setTimeout(check, 2000);
+          }
         });
     check();
     return () => {
@@ -65,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, offline, login, register, logout, setUser }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

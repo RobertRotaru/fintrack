@@ -7,7 +7,8 @@ import { useUser } from '../lib/auth';
 import { formatDay, parseAmount, useMoney } from '../lib/format';
 import { useAccounts, useCreateTransfer, useDeleteTransfer, useTransactions, useTransfers } from '../lib/queries';
 import { TransactionForm, TransactionList } from '../components/Transactions';
-import { Button, Card, Empty, Field, Input, Modal, PageHeader, Segmented, Select, Spinner } from '../components/ui';
+import { Button, Card, Empty, Field, Input, Modal, PageHeader, Segmented, Select } from '../components/ui';
+import { loadGate } from '../components/states';
 
 type Tab = 'transactions' | 'transfers';
 type KindFilter = 'all' | 'expense' | 'income';
@@ -16,8 +17,10 @@ export function Activity() {
   const user = useUser();
   const money = useMoney();
   const [params, setParams] = useSearchParams();
-  const { data: transactions = [], isLoading } = useTransactions();
-  const { data: accounts = [] } = useAccounts();
+  const txQ = useTransactions();
+  const accountsQ = useAccounts();
+  const transactions = txQ.data ?? [];
+  const accounts = accountsQ.data ?? [];
   const [tab, setTab] = useState<Tab>('transactions');
   const [kind, setKind] = useState<KindFilter>('all');
   const [query, setQuery] = useState('');
@@ -55,7 +58,8 @@ export function Activity() {
     return { income, expense };
   }, [filtered, user.baseCurrency]);
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([txQ, accountsQ], 'list');
+  if (gate) return gate;
 
   return (
     <div>
@@ -139,9 +143,13 @@ export function Activity() {
           <Card className="!p-3">
             {filtered.length ? (
               <TransactionList txs={filtered.slice(0, 300)} onSelect={setEditing} />
+            ) : transactions.length ? (
+              <Empty icon="search" title="No matches">
+                Nothing matches these filters. Try another month, account or search.
+              </Empty>
             ) : (
-              <Empty icon="search" title="Nothing found">
-                Try a different filter, or add a transaction.
+              <Empty icon="receipt" title="No transactions yet" action={<Button onClick={() => setAdding(true)}>Add your first one</Button>}>
+                Everything you spend and earn shows up here. Tip: press N anywhere for Quick add.
               </Empty>
             )}
             {filtered.length > 300 && <p className="py-3 text-center text-xs text-muted">Showing the latest 300 — narrow the filters to see more.</p>}

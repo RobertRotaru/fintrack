@@ -4,7 +4,8 @@ import { generateInsights, type Insight } from '@ft/core';
 import { useUser } from '../lib/auth';
 import { Icon } from '../lib/icons';
 import { useTxs } from '../lib/queries';
-import { Card, Empty, PageHeader, Segmented, Spinner, clsx } from '../components/ui';
+import { Card, Empty, PageHeader, Segmented, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 const TONE = {
   good: { cls: 'bg-good-soft text-good', label: 'Good news', Status: CircleCheck },
@@ -39,14 +40,16 @@ type Group = 'all' | Insight['group'];
 
 export function Insights() {
   const user = useUser();
-  const { txs, isLoading } = useTxs();
+  const txsQ = useTxs();
+  const { txs } = txsQ;
   const [group, setGroup] = useState<Group>('all');
   const insights = useMemo(() => generateInsights(txs, user.baseCurrency), [txs, user.baseCurrency]);
   const shown = group === 'all' ? insights : insights.filter((i) => i.group === group);
   const good = insights.filter((i) => i.tone === 'good').length;
   const bad = insights.filter((i) => i.tone === 'bad').length;
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([txsQ], 'charts');
+  if (gate) return gate;
 
   return (
     <div>

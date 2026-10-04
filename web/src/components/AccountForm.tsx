@@ -247,7 +247,7 @@ export function AccountForm({ account, onDone }: { account?: Account; onDone: ()
             type="button"
             title="Suggest a name"
             onClick={() => set({ name: suggestName(user.name, d.type, d.institution, d.customInstitution) })}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-brand cursor-pointer"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-brand-fg cursor-pointer"
           >
             <Wand2 className="size-4" />
           </button>

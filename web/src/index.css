@@ -4,49 +4,60 @@
 
 :root {
   color-scheme: light;
-  --bg: #f6f6f9;
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --surface-2: #f1f1f5;
-  --surface-3: #e7e7ee;
-  --line: #e4e4ec;
-  --ink: #0f1020;
-  --ink-2: #4a4b5e;
-  --muted: #8a8b9e;
-  --brand: #6366f1;
+  --surface-2: #eef1f6;
+  --surface-3: #e2e7ef;
+  --line: #e1e6ee;
+  --ink: #0e1a2b;
+  --ink-2: #3f4b5e;
+  --muted: #6b7689;
+  /* Navy: buttons & fills (white text 11:1), and navy text (same here). */
+  --brand: #1e3a6e;
   --brand-ink: #ffffff;
-  --brand-soft: #eef0ff;
+  --brand-fg: #1e3a6e;
+  --brand-soft: #e7edf8;
+  /* Headline net-worth card */
+  --hero: #13254a;
+  --hero-ink: #ffffff;
+  --hero-line: transparent;
   /* chart series: validated categorical slots (aqua / orange / blue) */
   --income: #1baf7a;
   --expense: #eb6834;
   --net: #2a78d6;
-  --grid: #ececf2;
+  --grid: #e8ecf2;
   /* status — reserved, always paired with an icon */
   --good: #0f9f6e;
   --good-soft: #e6f7f0;
   --bad: #dc3d3d;
   --bad-soft: #fdecec;
   --warn: #c98500;
-  --shadow: 0 1px 2px rgb(15 16 32 / 0.04), 0 4px 16px rgb(15 16 32 / 0.04);
+  --shadow: 0 1px 2px rgb(14 26 43 / 0.04), 0 4px 16px rgb(14 26 43 / 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #0b0b12;
-    --surface: #14141d;
-    --surface-2: #1b1b26;
-    --surface-3: #262633;
-    --line: #262633;
-    --ink: #f4f4f8;
-    --ink-2: #c3c3d1;
-    --muted: #82829a;
-    --brand: #818cf8;
-    --brand-ink: #0b0b12;
-    --brand-soft: #1e1f3a;
+    --bg: #0a0f1a;
+    --surface: #121a2a;
+    --surface-2: #182236;
+    --surface-3: #222e45;
+    --line: #222d42;
+    --ink: #eef2f8;
+    --ink-2: #c2cad8;
+    --muted: #8390a6;
+    /* Navy is too dark to read on dark surfaces: brighter fill, light text tone. */
+    --brand: #3f66b8;
+    --brand-ink: #ffffff;
+    --brand-fg: #8fb0f0;
+    --brand-soft: #172645;
+    --hero: #172a52;
+    --hero-ink: #ffffff;
+    --hero-line: rgb(255 255 255 / 0.08);
     --income: #199e70;
     --expense: #d95926;
     --net: #3987e5;
-    --grid: #22222d;
+    --grid: #1d2639;
     --good: #34c38f;
     --good-soft: #10291f;
     --bad: #f06a6a;
@@ -57,21 +68,26 @@
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0b0b12;
-  --surface: #14141d;
-  --surface-2: #1b1b26;
-  --surface-3: #262633;
-  --line: #262633;
-  --ink: #f4f4f8;
-  --ink-2: #c3c3d1;
-  --muted: #82829a;
-  --brand: #818cf8;
-  --brand-ink: #0b0b12;
-  --brand-soft: #1e1f3a;
+  --bg: #0a0f1a;
+  --surface: #121a2a;
+  --surface-2: #182236;
+  --surface-3: #222e45;
+  --line: #222d42;
+  --ink: #eef2f8;
+  --ink-2: #c2cad8;
+  --muted: #8390a6;
+  /* Navy is too dark to read on dark surfaces: brighter fill, light text tone. */
+  --brand: #3f66b8;
+  --brand-ink: #ffffff;
+  --brand-fg: #8fb0f0;
+  --brand-soft: #172645;
+  --hero: #172a52;
+  --hero-ink: #ffffff;
+  --hero-line: rgb(255 255 255 / 0.08);
   --income: #199e70;
   --expense: #d95926;
   --net: #3987e5;
-  --grid: #22222d;
+  --grid: #1d2639;
   --good: #34c38f;
   --good-soft: #10291f;
   --bad: #f06a6a;
@@ -93,6 +109,9 @@
   --color-muted: var(--muted);
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-fg: var(--brand-fg);
+  --color-hero: var(--hero);
+  --color-hero-ink: var(--hero-ink);
   --color-brand-soft: var(--brand-soft);
   --color-income: var(--income);
   --color-expense: var(--expense);
@@ -126,6 +145,8 @@ h2,
 }
 
 .card {
+  /* Cards sit in grids; let them shrink instead of widening the page. */
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 1.25rem;
@@ -156,6 +177,61 @@ h2,
 }
 .animate-pop {
   animation: pop 0.18s ease-out;
+}
+
+/*
+ * Motion. Only opacity and transform are animated, so the compositor handles
+ * it without layout or paint work.
+ */
+:root {
+  --motion-page: 220ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Page change: a short fade-and-rise when the route changes. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-in var(--motion-page) var(--ease-out) both;
+}
+
+/* Skeletons: wait 150ms before appearing so fast loads never flash. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.skeleton-in {
+  animation: fade-in 200ms ease-out 150ms both;
+}
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.55;
+  }
+}
+.skeleton {
+  background: var(--surface-2);
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .animate-pop,
+  .skeleton,
+  .skeleton-in {
+    animation: none;
+  }
 }
 
 input[type='number']::-webkit-inner-spin-button,

@@ -6,18 +6,22 @@ import { useUser } from '../lib/auth';
 import { useMoney } from '../lib/format';
 import { useAccounts, useTxs } from '../lib/queries';
 import { ChartTooltip, Legend, SERIES, axisProps } from '../components/charts';
-import { Card, CardHeader, Empty, IconBadge, PageHeader, ProgressBar, Spinner, clsx } from '../components/ui';
+import { Card, CardHeader, Empty, IconBadge, PageHeader, ProgressBar, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 const HORIZON = 6;
 
 export function Projections() {
   const user = useUser();
   const money = useMoney();
-  const { txs, isLoading } = useTxs();
-  const { data: accounts = [] } = useAccounts();
+  const txsQ = useTxs();
+  const accountsQ = useAccounts();
+  const { txs } = txsQ;
+  const accounts = accountsQ.data ?? [];
   const p = useMemo(() => project(txs, HORIZON), [txs]);
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([txsQ, accountsQ], 'charts');
+  if (gate) return gate;
   if (p.basisMonths < 1) {
     return (
       <div>
@@ -66,7 +70,7 @@ export function Projections() {
           <span
             className={clsx(
               'rounded-full px-3 py-1 text-xs font-semibold',
-              p.confidence === 'high' ? 'bg-good-soft text-good' : p.confidence === 'medium' ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted',
+              p.confidence === 'high' ? 'bg-good-soft text-good' : p.confidence === 'medium' ? 'bg-brand-soft text-brand-fg' : 'bg-surface-2 text-muted',
             )}
           >
             {p.confidence === 'high' ? 'High' : p.confidence === 'medium' ? 'Medium' : 'Low'} confidence

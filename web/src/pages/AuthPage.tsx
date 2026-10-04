@@ -27,9 +27,9 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between bg-[radial-gradient(120%_80%_at_0%_0%,#818cf8_0%,#6366f1_40%,#312e81_100%)] p-12 text-white">
+      <div className="hidden lg:flex flex-col justify-between bg-hero p-12 text-hero-ink">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-white/15">
             <TrendingUp className="size-5" strokeWidth={2.5} />
           </div>
           <span className="text-xl font-display font-extrabold tracking-tight">Fintrack</span>
@@ -44,7 +44,7 @@ export function AuthPage() {
               { i: Target, t: 'Goals with ETAs' },
               { i: Users, t: 'Shared family budget' },
             ].map(({ i: I, t }) => (
-              <div key={t} className="flex items-center gap-2.5 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+              <div key={t} className="flex items-center gap-2.5 rounded-2xl bg-white/10 px-4 py-3">
                 <I className="size-4" /> <span className="text-sm font-medium">{t}</span>
               </div>
             ))}
@@ -111,7 +111,7 @@ export function AuthPage() {
             {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
             <button
               type="button"
-              className="font-semibold text-brand cursor-pointer"
+              className="font-semibold text-brand-fg cursor-pointer"
               onClick={() => {
                 setMode(mode === 'login' ? 'register' : 'login');
                 setError('');

@@ -70,3 +70,18 @@ export function parseAmount(text: string, allowNegative = false): number | null 
   const re = allowNegative ? /^-?\d+(\.\d+)?$/ : /^\d+(\.\d+)?$/;
   return re.test(t) ? Number(t) : Number.NaN;
 }
+
+/**
+ * Splits a formatted amount into its currency label and its number so the
+ * number can be emphasised ("RON" small, "122,955.19" large).
+ */
+export function moneyParts(amount: number, currency: string): { currency: string; number: string; before: boolean } {
+  try {
+    const parts = new Intl.NumberFormat(undefined, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(amount);
+    const idx = parts.findIndex((p) => p.type === 'currency');
+    const number = parts.filter((p) => p.type !== 'currency' && !(p.type === 'literal' && !p.value.trim())).map((p) => p.value).join('');
+    return { currency: parts[idx]?.value ?? currency, number, before: idx <= parts.findIndex((p) => p.type === 'integer') };
+  } catch {
+    return { currency, number: amount.toFixed(2), before: false };
+  }
+}

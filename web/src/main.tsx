@@ -1,12 +1,13 @@
-import { StrictMode, Suspense, lazy } from 'react';
+import { StrictMode, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, toast } from 'sonner';
 import { AuthProvider, useAuth } from './lib/auth';
+import { ApiError } from './lib/api';
 import { useFx } from './lib/queries';
 import { Layout } from './components/Layout';
-import { Spinner } from './components/ui';
+import { AppSplash, NotFound } from './components/states';
 import { AuthPage } from './pages/AuthPage';
 import './index.css';
 
@@ -27,34 +28,39 @@ const Settings = page(() => import('./pages/Settings'), 'Settings');
 const queryClient = new QueryClient({
   // Every failed write surfaces its server message, including fire-and-forget ones.
   mutationCache: new MutationCache({ onError: (e) => void toast.error(e.message) }),
-  defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1 } },
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+      // Retry once for network/server trouble; a 4xx won't fix itself.
+      retry: (count, err) => count < 1 && !(err instanceof ApiError && err.status >= 400 && err.status < 500),
+    },
+  },
 });
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, offline } = useAuth();
   // Wait for live rates (or their failure — the fallback table then applies) so
   // the first render already uses them.
   const fx = useFx();
-  if (loading || fx.isLoading) return <Spinner />;
+  if (loading || fx.isLoading) return <AppSplash message={offline ? 'Can’t reach the server — retrying…' : undefined} />;
   if (!user) return <AuthPage />;
   return (
-    <Suspense fallback={<Spinner />}>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="accounts" element={<Accounts />} />
-          <Route path="transactions" element={<Activity />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="insights" element={<Insights />} />
-          <Route path="projections" element={<Projections />} />
-          <Route path="goals" element={<Goals />} />
-          <Route path="invest" element={<Invest />} />
-          <Route path="family" element={<Family />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="transactions" element={<Activity />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="insights" element={<Insights />} />
+        <Route path="projections" element={<Projections />} />
+        <Route path="goals" element={<Goals />} />
+        <Route path="invest" element={<Invest />} />
+        <Route path="family" element={<Family />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }
 

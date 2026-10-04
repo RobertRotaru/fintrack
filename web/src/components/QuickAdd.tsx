@@ -111,7 +111,7 @@ export function QuickAdd({ onDone, autoFocus = true }: { onDone?: () => void; au
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Segmented
           value={kind}
           onChange={(k) => setKind(k)}
@@ -120,12 +120,12 @@ export function QuickAdd({ onDone, autoFocus = true }: { onDone?: () => void; au
             { value: 'income', label: 'Income' },
           ]}
         />
-        <div className="relative">
+        <div className="relative min-w-0 max-w-44 flex-1 basis-32">
           <select
             aria-label="Account"
             value={accountId}
             onChange={(e) => setAccountId(e.target.value)}
-            className="appearance-none h-9 max-w-44 truncate rounded-xl border border-line bg-surface-2 pl-8 pr-7 text-sm font-medium text-ink outline-none cursor-pointer"
+            className="appearance-none h-9 w-full truncate rounded-xl border border-line bg-surface-2 pl-8 pr-7 text-sm font-medium text-ink outline-none cursor-pointer"
           >
             {active.map((a) => (
               <option key={a.id} value={a.id}>
@@ -167,17 +167,17 @@ export function QuickAdd({ onDone, autoFocus = true }: { onDone?: () => void; au
             key={d.v}
             type="button"
             onClick={() => setDate(d.v)}
-            className={clsx('rounded-lg px-2.5 py-1 font-medium cursor-pointer', date === d.v ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted hover:text-ink')}
+            className={clsx('rounded-lg px-2.5 py-1 font-medium cursor-pointer', date === d.v ? 'bg-brand-soft text-brand-fg' : 'bg-surface-2 text-muted hover:text-ink')}
           >
             {d.l}
           </button>
         ))}
-        <label className={clsx('relative flex items-center gap-1 rounded-lg px-2.5 py-1 font-medium cursor-pointer', date !== today && date !== yesterday ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted hover:text-ink')}>
+        <label className={clsx('relative flex items-center gap-1 rounded-lg px-2.5 py-1 font-medium cursor-pointer', date !== today && date !== yesterday ? 'bg-brand-soft text-brand-fg' : 'bg-surface-2 text-muted hover:text-ink')}>
           <CalendarDays className="size-3.5" />
           {date !== today && date !== yesterday ? new Date(`${date}T00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pick date'}
           <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
         </label>
-        <button type="button" onClick={() => setShowNote((s) => !s)} className={clsx('flex items-center gap-1 rounded-lg px-2.5 py-1 font-medium cursor-pointer', showNote || note ? 'bg-brand-soft text-brand' : 'bg-surface-2 text-muted hover:text-ink')}>
+        <button type="button" onClick={() => setShowNote((s) => !s)} className={clsx('flex items-center gap-1 rounded-lg px-2.5 py-1 font-medium cursor-pointer', showNote || note ? 'bg-brand-soft text-brand-fg' : 'bg-surface-2 text-muted hover:text-ink')}>
           <MessageSquareText className="size-3.5" /> Note
         </button>
       </div>

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import {
   ArrowLeftRight, BarChart3, Goal, Home, Lightbulb, LogOut, Menu, Moon, Plus, Settings, Sparkles, Sun, TrendingUp, Users, Wallet,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { QuickAdd } from './QuickAdd';
+import { ErrorBoundary, PageSkeleton, type SkeletonVariant } from './states';
 import { clsx, IconButton, Modal } from './ui';
 
 const NAV = [
@@ -24,7 +25,7 @@ function useTheme() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const t = document.documentElement.dataset.theme;
     if (t === 'light' || t === 'dark') return t;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -79,7 +80,7 @@ export function Layout() {
         </div>
         <button
           onClick={() => setQuickOpen(true)}
-          className="mb-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-semibold text-brand-ink shadow-lg shadow-brand/25 hover:brightness-110 transition cursor-pointer"
+          className="mb-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-semibold text-brand-ink shadow-sm hover:brightness-110 transition cursor-pointer"
         >
           <Plus className="size-4" strokeWidth={2.5} /> Add transaction
           <kbd className="ml-1 rounded bg-white/20 px-1.5 text-[10px] font-bold">N</kbd>
@@ -91,7 +92,7 @@ export function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                clsx('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition', isActive ? 'bg-brand-soft text-brand' : 'text-ink-2 hover:bg-surface-2 hover:text-ink')
+                clsx('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition', isActive ? 'bg-brand-soft text-brand-fg' : 'text-ink-2 hover:bg-surface-2 hover:text-ink')
               }
             >
               <I className="size-[18px]" /> {label}
@@ -100,7 +101,7 @@ export function Layout() {
         </nav>
         <div className="mt-auto flex items-center gap-2 rounded-2xl border border-line p-2">
           <NavLink to="/settings" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 hover:bg-surface-2">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-fuchsia-500 text-sm font-bold text-white">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-ink">
               {user?.name.slice(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -133,7 +134,14 @@ export function Layout() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 pb-28 lg:pb-10">
-        <Outlet />
+        {/* Keyed by route: replays the entrance motion and resets the crash boundary. */}
+        <div key={location.pathname} className="page-enter" data-testid="page">
+          <ErrorBoundary>
+            <Suspense fallback={<PageSkeleton variant={skeletonFor(location.pathname)} />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </main>
 
       {/* Mobile bottom nav with central add button */}
@@ -146,7 +154,7 @@ export function Layout() {
             <button
               onClick={() => setQuickOpen(true)}
               aria-label="Add transaction"
-              className="-mt-6 flex size-14 items-center justify-center rounded-2xl bg-brand text-brand-ink shadow-xl shadow-brand/30 active:scale-95 transition cursor-pointer"
+              className="-mt-6 flex size-14 items-center justify-center rounded-2xl bg-brand text-brand-ink shadow-lg active:scale-95 transition cursor-pointer"
             >
               <Plus className="size-7" strokeWidth={2.5} />
             </button>
@@ -165,7 +173,7 @@ export function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                clsx('flex flex-col items-center gap-2 rounded-2xl border p-4 text-xs font-medium', isActive ? 'border-brand bg-brand-soft text-brand' : 'border-line text-ink-2')
+                clsx('flex flex-col items-center gap-2 rounded-2xl border p-4 text-xs font-medium', isActive ? 'border-brand bg-brand-soft text-brand-fg' : 'border-line text-ink-2')
               }
             >
               <I className="size-5" /> {label}
@@ -184,12 +192,19 @@ export function Layout() {
   );
 }
 
+function skeletonFor(path: string): SkeletonVariant {
+  if (path === '/') return 'dashboard';
+  if (path === '/transactions') return 'list';
+  if (path === '/goals' || path === '/accounts' || path === '/family') return 'cards';
+  return 'charts';
+}
+
 function MobileLink({ to, label, icon: I, end }: (typeof NAV)[number]) {
   return (
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) => clsx('flex flex-col items-center justify-center gap-1 text-[11px] font-medium', isActive ? 'text-brand' : 'text-muted')}
+      className={({ isActive }) => clsx('flex flex-col items-center justify-center gap-1 text-[11px] font-medium', isActive ? 'text-brand-fg' : 'text-muted')}
     >
       <I className="size-5" /> {label}
     </NavLink>

@@ -8,12 +8,14 @@ import { useMoney, percent, formatDay } from '../lib/format';
 import { Icon } from '../lib/icons';
 import { useTxs } from '../lib/queries';
 import { CategoryDonut, ChartTooltip, Legend, SERIES, axisProps } from '../components/charts';
-import { Card, CardHeader, Delta, Empty, IconBadge, IconButton, PageHeader, Segmented, Spinner, clsx } from '../components/ui';
+import { Card, CardHeader, Delta, Empty, IconBadge, IconButton, PageHeader, Segmented, clsx } from '../components/ui';
+import { loadGate } from '../components/states';
 
 type Mode = 'month' | 'year';
 
 export function Reports() {
-  const { txs, isLoading } = useTxs();
+  const txsQ = useTxs();
+  const { txs } = txsQ;
   const [mode, setMode] = useState<Mode>('month');
   const [month, setMonth] = useState(monthKey(new Date()));
   const [year, setYear] = useState(new Date().getFullYear());
@@ -23,7 +25,8 @@ export function Reports() {
   const canNext = mode === 'month' ? month < now : year < new Date().getFullYear();
   const step = (dir: 1 | -1) => (mode === 'month' ? setMonth((m) => addMonths(m, dir)) : setYear((y) => y + dir));
 
-  if (isLoading) return <Spinner />;
+  const gate = loadGate([txsQ], 'charts');
+  if (gate) return gate;
 
   return (
     <div>

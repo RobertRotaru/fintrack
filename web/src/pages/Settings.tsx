@@ -6,7 +6,22 @@ import { api } from '../lib/api';
 import { useAuth, useUser } from '../lib/auth';
 import { CATEGORY_ICON_CHOICES } from '../lib/icons';
 import { keys, useAccounts, useApiMutation, useCategories, useFx } from '../lib/queries';
-import { Button, Card, CardHeader, ColorPicker, Field, IconBadge, IconPicker, Input, Modal, PageHeader, Segmented, Select, clsx } from '../components/ui';
+import {
+  Button,
+  Card,
+  CardHeader,
+  ColorPicker,
+  Field,
+  IconBadge,
+  IconPicker,
+  Input,
+  Modal,
+  PageHeader,
+  Segmented,
+  Select,
+  clsx,
+} from '../components/ui';
+import { ErrorState, Skeleton } from '../components/states';
 
 export function Settings() {
   const user = useUser();
@@ -68,10 +83,14 @@ export function Settings() {
 }
 
 function Categories() {
-  const { data: categories = [] } = useCategories();
+  const categoriesQ = useCategories();
+  const categories = categoriesQ.data ?? [];
   const [kind, setKind] = useState<TxKind>('expense');
   const [editing, setEditing] = useState<Category | 'new' | null>(null);
-  const archive = useApiMutation(({ id, archived }: { id: string; archived: boolean }) => api(`/categories/${id}`, { method: 'PATCH', body: { archived } }), [keys.categories]);
+  const archive = useApiMutation(
+    ({ id, archived }: { id: string; archived: boolean }) => api(`/categories/${id}`, { method: 'PATCH', body: { archived } }),
+    [keys.categories],
+  );
   const list = categories.filter((c) => c.kind === kind);
 
   return (
@@ -94,25 +113,38 @@ function Categories() {
           { value: 'income', label: 'Income' },
         ]}
       />
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {list.map((c) => (
-          <div key={c.id} className={clsx('group flex items-center gap-3 rounded-xl border border-line p-2.5', c.archived && 'opacity-50')}>
-            <button onClick={() => setEditing(c)} className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer">
-              <IconBadge icon={c.icon} color={c.color} size="sm" />
-              <span className="truncate text-sm font-medium">{c.name}</span>
-              {!c.isDefault && <span className="rounded bg-brand-soft px-1.5 text-[10px] font-semibold text-brand">custom</span>}
-            </button>
-            <button
-              aria-label={c.archived ? 'Restore' : 'Archive'}
-              title={c.archived ? 'Restore' : 'Archive'}
-              onClick={() => archive.mutate({ id: c.id, archived: !c.archived })}
-              className="text-muted opacity-0 transition hover:text-ink group-hover:opacity-100 cursor-pointer"
+      {categoriesQ.isError && !categoriesQ.data ? (
+        <ErrorState compact error={categoriesQ.error} retrying={categoriesQ.isFetching} onRetry={() => void categoriesQ.refetch()} />
+      ) : !categoriesQ.data ? (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-busy="true">
+          {Array.from({ length: 9 }, (_, i) => (
+            <Skeleton key={i} className="h-[54px]" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((c) => (
+            <div
+              key={c.id}
+              className={clsx('group flex items-center gap-3 rounded-xl border border-line p-2.5', c.archived && 'opacity-50')}
             >
-              {c.archived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-            </button>
-          </div>
-        ))}
-      </div>
+              <button onClick={() => setEditing(c)} className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer">
+                <IconBadge icon={c.icon} color={c.color} size="sm" />
+                <span className="truncate text-sm font-medium">{c.name}</span>
+                {!c.isDefault && <span className="rounded bg-brand-soft px-1.5 text-[10px] font-semibold text-brand-fg">custom</span>}
+              </button>
+              <button
+                aria-label={c.archived ? 'Restore' : 'Archive'}
+                title={c.archived ? 'Restore' : 'Archive'}
+                onClick={() => archive.mutate({ id: c.id, archived: !c.archived })}
+                className="text-muted opacity-0 transition hover:text-ink group-hover:opacity-100 cursor-pointer"
+              >
+                {c.archived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing === 'new' ? 'New category' : 'Edit category'}>
         {editing && <CategoryForm category={editing === 'new' ? undefined : editing} kind={kind} onDone={() => setEditing(null)} />}
       </Modal>
@@ -123,7 +155,8 @@ function Categories() {
 function CategoryForm({ category, kind, onDone }: { category?: Category; kind: TxKind; onDone: () => void }) {
   const [f, setF] = useState({ name: category?.name ?? '', icon: category?.icon ?? 'tag', color: category?.color ?? PERSONAL_COLORS[0] });
   const save = useApiMutation(
-    (body: typeof f) => (category ? api(`/categories/${category.id}`, { method: 'PATCH', body }) : api('/categories', { body: { ...body, kind } })),
+    (body: typeof f) =>
+      category ? api(`/categories/${category.id}`, { method: 'PATCH', body }) : api('/categories', { body: { ...body, kind } }),
     [keys.categories, keys.transactions],
   );
   return (
@@ -131,7 +164,13 @@ function CategoryForm({ category, kind, onDone }: { category?: Category; kind: T
       <div className="flex items-center gap-3">
         <IconBadge icon={f.icon} color={f.color} size="lg" />
         <Field label="Name">
-          <Input autoFocus value={f.name} maxLength={40} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. Car wash" />
+          <Input
+            autoFocus
+            value={f.name}
+            maxLength={40}
+            onChange={(e) => setF({ ...f, name: e.target.value })}
+            placeholder="e.g. Car wash"
+          />
         </Field>
       </div>
       <Field label="Colour">
@@ -163,7 +202,8 @@ function CategoryForm({ category, kind, onDone }: { category?: Category; kind: T
   );
 }
 
-const rateLabel = (r: number) => (r >= 100 ? r.toLocaleString(undefined, { maximumFractionDigits: 0 }) : r >= 1 ? r.toFixed(4) : r.toPrecision(4));
+const rateLabel = (r: number) =>
+  r >= 100 ? r.toLocaleString(undefined, { maximumFractionDigits: 0 }) : r >= 1 ? r.toFixed(4) : r.toPrecision(4);
 
 function ExchangeRates() {
   const user = useUser();
@@ -194,7 +234,9 @@ function ExchangeRates() {
         {list.map((c) => (
           <div key={c} className="flex items-baseline justify-between border-b border-line py-1.5 text-sm">
             <span className={clsx('font-semibold', held.includes(c) ? 'text-ink' : 'text-muted')}>1 {c}</span>
-            <span className="num text-ink-2">{rateLabel(convert(1, c, user.baseCurrency))} {user.baseCurrency}</span>
+            <span className="num text-ink-2">
+              {rateLabel(convert(1, c, user.baseCurrency))} {user.baseCurrency}
+            </span>
           </div>
         ))}
       </div>
