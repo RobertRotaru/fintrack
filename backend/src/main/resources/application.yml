@@ -1,0 +1,42 @@
+server:
+  port: ${PORT:4000}
+  # Honour X-Forwarded-* from a reverse proxy (client IPs for login throttling, scheme).
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:framework}
+  shutdown: graceful
+
+spring:
+  application:
+    name: fintrack
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fintrack}
+    username: ${DB_USER:fintrack}
+    password: ${DB_PASSWORD:fintrack}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  flyway:
+    locations: classpath:db/migration
+  threads:
+    virtual:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+fintrack:
+  # Signs session tokens. Required in production (at least 32 characters).
+  jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-32-chars-min}
+  token-ttl: 30d
+  # Comma-separated list of allowed browser origins; empty allows any origin.
+  cors-origins: ${CORS_ORIGIN:}
+  fx:
+    # Fetch live exchange rates (every 6 hours). Off in tests.
+    enabled: ${FX_ENABLED:true}
+  ai:
+    model: ${ANTHROPIC_MODEL:claude-opus-5-5}
