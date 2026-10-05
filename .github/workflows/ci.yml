@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: Web & core (typecheck, unit tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build -w web
+
+  backend:
+    name: Backend (JUnit on embedded PostgreSQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew test bootJar
+        working-directory: backend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: backend-test-reports
+          path: backend/build/reports/tests
+
+  integration:
+    name: API contract & end-to-end (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: fintrack
+          POSTGRES_USER: fintrack
+          POSTGRES_PASSWORD: fintrack
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fintrack" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      JWT_SECRET: ci-only-secret-that-is-at-least-32-characters
+      FX_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start the API
+        working-directory: backend
+        run: |
+          ./gradlew bootJar -q
+          nohup java -jar build/libs/fintrack-backend-*.jar > api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:4000/api/health && break; sleep 2; done
+      - name: API contract tests
+        run: npm run test:contract
+      - name: End-to-end (headless Chrome)
+        run: |
+          nohup npm run dev -w web > web.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:5173 > /dev/null && break; sleep 2; done
+          TOKEN=$(curl -s -X POST localhost:4000/api/auth/register -H 'content-type: application/json' \
+            -d '{"name":"E2E","email":"e2e@fintrack.test","password":"e2e-password-123","country":"RO"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+          curl -sf -X POST localhost:4000/api/demo -H "authorization: Bearer $TOKEN" > /dev/null
+          E2E_EMAIL=e2e@fintrack.test E2E_PASSWORD=e2e-password-123 CHROME_PATH=$(which google-chrome) CHROME_ARGS=--no-sandbox npm run e2e
+      - name: Logs
+        if: failure()
+        run: cat backend/api.log web.log || true

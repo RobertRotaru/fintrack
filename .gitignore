@@ -2,11 +2,14 @@
 node_modules/
 dist/
 *.tsbuildinfo
+backend/build/
+backend/.gradle/
 
 # Local data & secrets
-server/data/
 *.db
 *.db-*
+# …except the legacy SQLite fixture the importer is tested against.
+!backend/src/test/resources/legacy/finance.db
 .env
 .env.*
 !.env.example

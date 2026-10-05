@@ -71,7 +71,7 @@ export function Invest() {
           <div className="text-sm">
             <p className="font-semibold">The AI coach needs an API key</p>
             <p className="mt-1 text-muted">
-              Add <code className="rounded bg-surface-2 px-1">ANTHROPIC_API_KEY=…</code> to <code className="rounded bg-surface-2 px-1">server/.env</code> and restart the server.
+              Add <code className="rounded bg-surface-2 px-1">ANTHROPIC_API_KEY=…</code> to <code className="rounded bg-surface-2 px-1">.env</code> and restart the backend.
               Your habit snapshot below works without it.
             </p>
           </div>

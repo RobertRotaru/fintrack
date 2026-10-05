@@ -1,6 +1,6 @@
 /**
  * Offline fallback rates (units per 1 EUR). The live rates fetched by the server
- * (see server/src/fx.ts) replace these via `setRates`; these only apply until the
+ * (see backend FxService) replace these via `setRates`; these only apply until the
  * first successful fetch, or when every rate source is unreachable.
  */
 export const FX_PER_EUR: Record<string, number> = {
