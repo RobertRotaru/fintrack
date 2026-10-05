@@ -87,22 +87,38 @@ and an AI coach that reads your habits.
 
 ```
 fintrack/
+├─ backend         REST API — Java 21 · Spring Boot 4 · PostgreSQL 17 (Flyway migrations),
+│                  Spring Security with JWT sessions, family sharing, live FX,
+│                  Claude-powered investing coach (Anthropic Java SDK).
 ├─ packages/core   Shared, dependency-free TypeScript — the brains.
 │                  Reports, insights, projections, goal plans, habit summaries,
 │                  default categories, banks by country, currency conversion.
-├─ server          REST API — Express 5 + SQLite (node:sqlite), JWT auth,
-│                  family sharing, live FX, Claude-powered investing coach.
-└─ web             React 19 · Vite · Tailwind CSS 4 · Recharts · TanStack Query.
+├─ web             React 19 · Vite · Tailwind CSS 4 · Recharts · TanStack Query.
+└─ tests/contract  Black-box HTTP tests for every API endpoint.
 ```
 
-The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app
-uses the exact same logic and the same API.
+The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app uses the exact same logic and
+the same API. `packages/core` is also the single source of truth for reference data: the backend's `reference.json`
+(countries, currencies, banks, default categories) is generated from it with `npm run export:backend-data`, and a test
+fails if the two drift apart.
 
-**Tested** with 192 Vitest tests — unit tests for the analytics (including net-worth history and the home page’s
-headline), API integration tests (validation, boundary values, permissions, family-sharing isolation) and UI tests for
-every page’s loading, empty and error states and the interactive details (range filters, report tabs, spending
-drill-down, theme switching, family invites) — plus 28 headless-Chrome end-to-end checks for page transitions, offline
-behaviour and failure recovery.
+**Data.** Money is stored as exact decimals (`NUMERIC(24, 8)` — cents for fiat, satoshis for crypto) and rounded half
+away from zero, exactly like the web app. Ids are UUIDs, dates are real `DATE`s and timestamps `TIMESTAMPTZ`; the
+schema is versioned with Flyway (`backend/src/main/resources/db/migration`).
+
+**Tested** at four levels:
+
+- **Backend** — 28 JUnit tests on a real PostgreSQL (embedded, no Docker needed): validation, money rounding and JSON
+  output, sessions and sign-in throttling, a golden test proving the Java habit summary matches `@ft/core`
+  exactly, a demo-data parity test against the old server, and an import of a real database from the old
+  SQLite backend whose every API response must match what the old API returned.
+- **API contract** — 108 black-box HTTP tests (`tests/contract`): validation and boundary values, permissions,
+  family-sharing isolation, crypto precision, consistency and error shapes, run against a live backend.
+- **Core & web** — 86 Vitest tests for the analytics and for every page's loading, empty and error states and its
+  interactive details (range filters, report tabs, spending drill-down, theme switching, family invites).
+- **End to end** — 28 headless-Chrome checks for page transitions, offline behaviour and failure recovery.
+
+CI (GitHub Actions) runs all four on every pull request, the contract and end-to-end suites against PostgreSQL 17.
 
 **Design notes**
 
@@ -117,25 +133,59 @@ behaviour and failure recovery.
 **Data & privacy**
 
 - Family members only see what is explicitly shared, and only the person who added a transaction can edit or delete it.
+- Passwords are stored as bcrypt hashes; sessions are signed tokens that expire after 30 days, and repeated failed sign-ins are throttled.
 - The AI coach receives aggregates only — averages, category shares and balance totals. No names, notes or bank details.
-- Exchange rates come from [ExchangeRate-API](https://www.exchangerate-api.com) (fiat, daily) and Coinbase (crypto), cached server-side with an offline fallback.
+- Exchange rates come from [ExchangeRate-API](https://www.exchangerate-api.com) (fiat, daily) and Coinbase (crypto), cached in the database with an offline fallback.
 
 ## Run it locally
 
+You need **Java 21**, **Node 22** and **PostgreSQL** (Docker is the easiest way to get it).
+
 ```bash
+cp .env.example .env     # database, JWT secret, optional Anthropic API key
+npm run db:up            # PostgreSQL 17 in Docker (or point DB_URL at your own)
 npm install
-npm run dev          # API on :4000, web on :5173 — sign up, then "Load a year of demo data"
+npm run dev              # API on :4000 (Spring Boot), web on :5173 — sign up, then "Load a year of demo data"
 ```
 
-Optional: `ANTHROPIC_API_KEY` enables the AI coach, `JWT_SECRET` is required in production, and `DB_FILE` picks the SQLite file.
+The API creates its tables on first start. Optional settings: `ANTHROPIC_API_KEY` enables the AI coach,
+`CORS_ORIGIN` restricts browser origins, `FX_ENABLED=false` skips live exchange rates.
 
 ```bash
-npm test             # Vitest: core, API and UI
+npm test                 # Vitest: core and web
+npm run test:backend     # JUnit on an embedded PostgreSQL (or set TEST_DB_URL to use your own)
+npm run test:contract    # API contract tests, with the backend running
 npm run typecheck
 E2E_EMAIL=… E2E_PASSWORD=… CHROME_PATH=/path/to/chrome npm run e2e   # with both dev servers running
 ```
 
-In a container, add `CHROME_ARGS=--no-sandbox` to the end-to-end run.
+In a container, add `CHROME_ARGS=--no-sandbox` to the end-to-end run. PostgreSQL refuses to run as root, so as root
+use `TEST_DB_URL=jdbc:postgresql://localhost:5432/postgres` for the backend tests.
+
+## Deploying
+
+```bash
+docker compose --profile full up --build    # PostgreSQL + the API, with JWT_SECRET from .env
+```
+
+Or build the jar yourself (`cd backend && ./gradlew bootJar`) and run it with `SPRING_PROFILES_ACTIVE=prod`,
+`DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 characters — in production the API refuses to
+start without one. `/actuator/health` (with liveness and readiness probes) is there for load balancers. Serve the web
+app's static build (`npm run build -w web`) from any CDN or web server, with `/api` proxied to the backend.
+
+### Moving over from the SQLite version
+
+Earlier versions of Fintrack stored everything in a SQLite file (`server/data/finance.db`). Import it into an empty
+PostgreSQL database once:
+
+```bash
+cd backend && ./gradlew bootJar
+java -jar build/libs/fintrack-backend-1.0.0.jar --import-sqlite=/path/to/finance.db
+```
+
+Everyone keeps their account, password and history: ids, balances, family sharing, goals, AI reports and cached
+exchange rates all carry over, amounts become exact decimals, and nothing is written unless every row imports.
+Sessions signed with an old `JWT_SECRET` shorter than 32 characters end, so people sign in again once.
 
 ## Default categories
 
