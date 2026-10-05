@@ -8,3 +8,4 @@ export * from './projections';
 export * from './insights';
 export * from './goals';
 export * from './habits';
+export * from './networth';

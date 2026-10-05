@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  FX_PER_EUR, addMonths, categoryTotals, convert, daysInMonth, detectRecurring, etaFor, formatMoney, generateInsights,
-  goalPlan, habitSummary, minUnit, roundFor, monthKey, monthlyReport, monthlyTotals, monthsBetween, normalize, pctChange, project, round2,
+  FX_PER_EUR, NET_WORTH_RANGES, accountFlows, addMonths, balanceChange, categoryTotals, convert, daysInMonth, detectRecurring, etaFor, formatMoney, generateInsights,
+  financialMood, goalPlan, habitSummary, netWorthSeries, rangeStart, totalAt, minUnit, roundFor, monthKey, monthlyReport, monthlyTotals, monthsBetween, normalize, pctChange, project, round2,
   setRates, toISODate, yearlyReport, type Goal, type Transaction, type Tx,
 } from '../src';
 
@@ -249,5 +249,85 @@ describe('habitSummary', () => {
     expect(s.monthsAnalyzed).toBe(0);
     expect(s.emergencyFundMonths).toBe(0);
     expect(noBad(s)).toBe(true);
+  });
+});
+
+// ---- net worth history & narrative -----------------------------------------
+
+describe('net worth history', () => {
+  const accounts = [
+    { id: 'chk', currency: 'RON', balance: 1000 },
+    { id: 'sav', currency: 'RON', balance: 5000 },
+    { id: 'eur', currency: 'EUR', balance: 100 },
+  ];
+  const flows = accountFlows(
+    [
+      { accountId: 'chk', date: '2026-10-10', kind: 'income', amount: 3000 },
+      { accountId: 'chk', date: '2026-10-12', kind: 'expense', amount: 500 },
+      { accountId: 'eur', date: '2026-09-01', kind: 'income', amount: 100 },
+    ],
+    [{ fromAccountId: 'chk', toAccountId: 'sav', date: '2026-10-11', amount: 1000, toAmount: 1000 }],
+  );
+  const eurInRon = convert(100, 'EUR', 'RON');
+
+  it('turns transactions and transfers into signed per-account flows', () => {
+    expect(flows).toHaveLength(5);
+    expect(flows.filter((f) => f.accountId === 'chk').map((f) => f.amount).sort()).toEqual([-1000, -500, 3000].sort());
+  });
+  it('rewinds balances to the end of a past day', () => {
+    expect(totalAt(accounts, flows, '2026-10-15', 'RON')).toBeCloseTo(6000 + eurInRon);
+    // Before the salary and the purchase; the transfer nets to zero either way.
+    expect(totalAt(accounts, flows, '2026-10-09', 'RON')).toBeCloseTo(6000 + eurInRon - 2500);
+    expect(totalAt(accounts, flows, '2026-08-31', 'RON')).toBeCloseTo(6000 - 2500);
+  });
+  it('a transfer between own accounts does not move net worth', () => {
+    const t = accountFlows([], [{ fromAccountId: 'chk', toAccountId: 'sav', date: '2026-10-11', amount: 1000, toAmount: 1000 }]);
+    expect(totalAt(accounts.slice(0, 2), t, '2026-10-01', 'RON')).toBe(6000);
+    // ...but it does move a single account's balance.
+    expect(balanceChange([accounts[1]], t, '2026-10-01', 'RON')).toMatchObject({ now: 5000, then: 4000, change: 1000, pct: 25 });
+  });
+  it('reports no percentage when the starting balance was zero', () => {
+    expect(balanceChange([{ id: 'x', currency: 'RON', balance: 50 }], [{ accountId: 'x', date: '2026-10-02', amount: 50 }], '2026-10-01', 'RON').pct).toBeNull();
+  });
+  it('series ends at today’s net worth and starts at the range start', () => {
+    const s = netWorthSeries(accounts, flows, 'RON', '1M', TODAY);
+    expect(s.at(-1)).toEqual({ date: '2026-10-15', value: round2(6000 + eurInRon) });
+    expect(s[0].date).toBe('2026-09-15');
+    expect(s[0].value).toBeCloseTo(6000 + eurInRon - 2500);
+    expect(s.length).toBe(31);
+    // Dates strictly increase.
+    expect(s.every((p, i) => i === 0 || p.date > s[i - 1].date)).toBe(true);
+  });
+  it('uses coarser steps for longer ranges and never produces NaN', () => {
+    for (const r of NET_WORTH_RANGES) {
+      const s = netWorthSeries(accounts, flows, 'RON', r, TODAY);
+      expect(noBad(s), r).toBe(true);
+      expect(s.length, r).toBeLessThanOrEqual(100);
+      expect(s.at(-1)!.date).toBe('2026-10-15');
+    }
+    expect(netWorthSeries([], [], 'RON', '1Y', TODAY).every((p) => p.value === 0)).toBe(true);
+  });
+  it('clamps month-end range starts and lets ALL reach the first flow', () => {
+    expect(rangeStart('1M', [], new Date(2026, 2, 31))).toBe('2026-02-28');
+    expect(rangeStart('1Y', [], new Date(2024, 1, 29))).toBe('2023-02-28');
+    expect(rangeStart('ALL', [{ accountId: 'a', date: '2024-05-10', amount: 1 }], TODAY)).toBe('2024-05-09');
+    expect(rangeStart('ALL', [], TODAY)).toBe('2026-09-15');
+  });
+});
+
+describe('financial mood', () => {
+  it('welcomes a new user', () => {
+    expect(financialMood({ hasData: false, netWorthPct: null, spendingPace: null, savingsRate: null }).tone).toBe('new');
+  });
+  it('says "You’re in a good place." when growing and spending is in check', () => {
+    const m = financialMood({ hasData: true, netWorthPct: 4.8, spendingPace: -12, savingsRate: 0.4 });
+    expect(m).toMatchObject({ tone: 'great', headline: 'You’re in a good place.', subline: 'Your financial life is on track. Keep going.' });
+    expect(financialMood({ hasData: true, netWorthPct: 1, spendingPace: 2, savingsRate: 0.05 }).tone).toBe('good');
+    expect(financialMood({ hasData: true, netWorthPct: null, spendingPace: null, savingsRate: null }).tone).toBe('good');
+  });
+  it('flags faster spending gently, and a dip calmly', () => {
+    expect(financialMood({ hasData: true, netWorthPct: 2, spendingPace: 25, savingsRate: 0.3 }).tone).toBe('watch');
+    expect(financialMood({ hasData: true, netWorthPct: -3, spendingPace: 25, savingsRate: 0 }).headline).toBe('Let’s steady things.');
+    expect(financialMood({ hasData: true, netWorthPct: -3, spendingPace: -10, savingsRate: 0 }).headline).toBe('A quieter month.');
   });
 });

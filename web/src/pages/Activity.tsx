@@ -23,8 +23,12 @@ export function Activity() {
   const accounts = accountsQ.data ?? [];
   const [tab, setTab] = useState<Tab>('transactions');
   const [kind, setKind] = useState<KindFilter>('all');
-  const [query, setQuery] = useState('');
-  const [month, setMonth] = useState<string>('all');
+  // Other pages can deep-link a search and a month, e.g. a category on Spending.
+  const [query, setQuery] = useState(() => params.get('q') ?? '');
+  const [month, setMonth] = useState<string>(() => {
+    const m = params.get('month');
+    return m && /^\d{4}-\d{2}$/.test(m) ? m : 'all';
+  });
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [adding, setAdding] = useState(false);
   const [transferring, setTransferring] = useState(false);

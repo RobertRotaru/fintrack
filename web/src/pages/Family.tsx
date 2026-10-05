@@ -1,17 +1,44 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Copy, Crown, LogOut, RefreshCw, UserMinus, Users } from 'lucide-react';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { categoryTotals, inMonth, monthKey, monthLabel, normalize, totalOf, type Household } from '@ft/core';
+import { Link } from 'react-router';
+import { ChevronRight, Copy, Crown, LogOut, Plus, RefreshCw, Share2, UserMinus } from 'lucide-react';
+import { Bar, BarChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer } from '../components/ResponsiveChart';
+import { balanceChange, categoryTotals, goalPlan, inMonth, monthKey, monthLabel, netWorthSeries, normalize, toISODate, totalOf, type Household } from '@ft/core';
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
 import { useMoney } from '../lib/format';
-import { keys, useAccounts, useApiMutation, useHousehold, useTransactions } from '../lib/queries';
+import { Icon } from '../lib/icons';
+import { keys, useAccounts, useApiMutation, useFlows, useGoals, useHousehold, useTransactions } from '../lib/queries';
 import { AccountCard } from '../components/AccountCard';
-import { CategoryDonut, ChartTooltip, SERIES, axisProps } from '../components/charts';
+import { CategoryDonut, ChartTooltip, SERIES, Sparkline, axisProps } from '../components/charts';
+import { TogetherScene } from '../components/illustrations';
 import { TransactionList } from '../components/Transactions';
-import { Button, Card, CardHeader, Empty, Field, IconButton, Input, PageHeader, clsx } from '../components/ui';
+import { Avatar, Button, Card, CardHeader, Empty, Field, IconButton, Input, Modal, PageHeader, ProgressBar, Segmented, Trend, clsx } from '../components/ui';
 import { loadGate } from '../components/states';
+
+/** Who you're inviting — only shapes the invite message; everyone joins as a member. */
+export type InviteRole = 'partner' | 'family' | 'child';
+const ROLE_LABEL: Record<InviteRole, string> = { partner: 'Partner', family: 'Family member', child: 'Child' };
+
+export function inviteMessage(role: InviteRole, household: string, code: string, from: string): string {
+  const who = role === 'partner' ? 'my partner' : role === 'child' ? 'part of the family' : 'part of our family budget';
+  return `${from} invited you to join “${household}” on Fintrack as ${who}. Open Fintrack → Family → Join a family, and enter the code ${code}.`;
+}
+
+/** The hero shared by both family states. */
+function FamilyHero({ action }: { action?: React.ReactNode }) {
+  return (
+    <section className="relative mb-12 overflow-hidden rounded-[32px] border border-line bg-surface shadow-[var(--shadow)]">
+      <TogetherScene className="absolute inset-y-0 right-0 h-full w-full sm:w-[55%] [mask-image:linear-gradient(to_right,transparent,black_35%)]" />
+      <div className="relative max-w-lg p-8 sm:p-12">
+        <h2 className="text-5xl leading-[1.02] tracking-[-0.025em]">Shared finances, stronger together.</h2>
+        <p className="mt-4 text-[17px] text-ink-2">Invite your partner or family members to manage your finances together. You choose what to share — everything else stays private.</p>
+        {action && <div className="mt-7">{action}</div>}
+      </div>
+    </section>
+  );
+}
 
 const ALL = [keys.household, keys.accounts, keys.transactions, keys.goals, keys.transfers];
 
@@ -39,6 +66,7 @@ function NoFamily() {
   return (
     <div>
       <PageHeader title="Family" subtitle="Budget together — share accounts and goals with your partner or family." />
+      <FamilyHero />
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <Empty icon="users" title="Start a family">
@@ -77,6 +105,9 @@ function FamilyHome({ household }: { household: Household }) {
   const me = household.members.find((m) => m.userId === user.id);
   const isOwner = me?.role === 'owner';
   const [name, setName] = useState(household.name);
+  const [inviting, setInviting] = useState(false);
+  const flows = useFlows();
+  const { data: goals = [] } = useGoals();
 
   const rename = useApiMutation((n: string) => api('/household', { method: 'PATCH', body: { name: n } }), [keys.household]);
   const newCode = useApiMutation(() => api('/household/invite-code', { method: 'POST' }), [keys.household]);
@@ -105,45 +136,107 @@ function FamilyHome({ household }: { household: Household }) {
   if (gate) return gate;
 
   const ownerName = (ownerId: string) => (ownerId === user.id ? 'Yours' : household.members.find((m) => m.userId === ownerId)?.name.split(' ')[0]);
+  const lastMonthEnd = toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), 0));
+  const overview = balanceChange(shared, flows, lastMonthEnd, user.baseCurrency);
+  const overviewSeries = netWorthSeries(shared, flows, user.baseCurrency, '3M').map((p) => p.value);
+  const sharedGoals = goals.filter((g) => g.householdId === household.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Users className="size-7 text-brand-fg" /> {household.name}
-          </span>
-        }
-        subtitle={`${household.members.length} member${household.members.length > 1 ? 's' : ''} · ${shared.length} shared account${shared.length === 1 ? '' : 's'}`}
+        title="Family"
+        subtitle={`${household.name} · ${household.members.length} member${household.members.length > 1 ? 's' : ''} · ${shared.length} shared account${shared.length === 1 ? '' : 's'}`}
       />
+      <FamilyHero
+        action={
+          <Button size="lg" onClick={() => setInviting(true)}>
+            <Plus className="size-4" /> Invite family member
+          </Button>
+        }
+      />
+
+      <section aria-label="Members" className="flex flex-wrap items-start gap-6 sm:gap-8">
+        {household.members.map((m) => (
+          <div key={m.userId} className="group relative flex w-20 flex-col items-center text-center" data-testid="member">
+            <Avatar name={m.name} size={64} ring />
+            <p className="mt-2 w-full truncate text-sm font-semibold">{m.userId === user.id ? 'You' : m.name.split(' ')[0]}</p>
+            <p className="flex items-center gap-1 text-xs text-muted">
+              {m.role === 'owner' ? (
+                <>
+                  <Crown className="size-3 text-warn" aria-hidden="true" /> Admin
+                </>
+              ) : (
+                'Member'
+              )}
+            </p>
+            {isOwner && m.userId !== user.id && (
+              <button
+                aria-label={`Remove ${m.name}`}
+                title={`Remove ${m.name}`}
+                onClick={() => confirm(`Remove ${m.name} from the family? Their accounts will stop being shared.`) && removeMember.mutate(m.userId)}
+                className="absolute -right-1 -top-1 flex size-7 items-center justify-center rounded-full border border-line bg-surface text-muted opacity-0 shadow-[var(--shadow)] transition hover:text-bad group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+              >
+                <UserMinus className="size-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
+        <button onClick={() => setInviting(true)} className="group flex w-20 flex-col items-center text-center cursor-pointer">
+          <span className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-muted transition group-hover:border-brand group-hover:text-brand-fg">
+            <Plus className="size-6" />
+          </span>
+          <span className="mt-2 text-sm font-semibold">Add</span>
+          <span className="text-xs text-muted">Invite</span>
+        </button>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+        <Card className="!p-7">
+          <p className="eyebrow">Family overview</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm text-muted">Total balance of shared accounts</p>
+              <p className="figure mt-1 text-5xl leading-none" data-testid="family-total">{money(overview.now)}</p>
+              <div className="mt-2">
+                <Trend value={overview.pct} suffix="this month" />
+              </div>
+            </div>
+            <Sparkline values={overviewSeries} width={200} height={64} />
+          </div>
+        </Card>
+        <Card className="!p-7">
+          <div className="flex items-center justify-between">
+            <p className="eyebrow">Shared goals</p>
+            <Link to="/goals" className="inline-flex items-center gap-1 text-sm font-medium text-brand-fg">
+              {sharedGoals.length} active <ChevronRight className="size-4" />
+            </Link>
+          </div>
+          {sharedGoals.length ? (
+            <ul className="mt-4 space-y-4">
+              {sharedGoals.slice(0, 3).map((g) => {
+                const plan = goalPlan(g, 0);
+                return (
+                  <li key={g.id}>
+                    <div className="mb-1.5 flex items-center gap-2 text-sm">
+                      <Icon name={g.icon} className="size-4" style={{ color: g.color }} />
+                      <span className="flex-1 truncate font-medium">{g.name}</span>
+                      <span className="text-xs text-muted num">{Math.round(plan.progress * 100)}%</span>
+                    </div>
+                    <ProgressBar value={plan.progress} color={g.color} label={`${g.name} progress`} />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted">No shared goals yet. When you create a goal, tick “Family goal” so everyone can contribute.</p>
+          )}
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
         <Card>
-          <CardHeader title="Members" />
-          <ul className="space-y-2">
-            {household.members.map((m) => (
-              <li key={m.userId} className="flex items-center gap-3 rounded-xl p-2 hover:bg-surface-2">
-                <span className="flex size-10 items-center justify-center rounded-full bg-brand font-bold text-brand-ink">{m.name[0]?.toUpperCase()}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 text-sm font-semibold">
-                    {m.name}
-                    {m.userId === user.id && <span className="text-muted font-normal">(you)</span>}
-                    {m.role === 'owner' && <Crown className="size-3.5 text-warn" aria-label="Owner" />}
-                  </p>
-                  <p className="truncate text-xs text-muted">{m.email}</p>
-                </div>
-                {isOwner && m.userId !== user.id && (
-                  <IconButton
-                    label={`Remove ${m.name}`}
-                    onClick={() => confirm(`Remove ${m.name} from the family? Their accounts will stop being shared.`) && removeMember.mutate(m.userId)}
-                  >
-                    <UserMinus className="size-4" />
-                  </IconButton>
-                )}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-5 rounded-2xl bg-brand-soft p-4">
+          <CardHeader title="Family settings" />
+          <div className="rounded-2xl bg-brand-soft p-4">
             <p className="text-xs font-semibold text-brand-fg">Invite code</p>
             <div className="mt-1 flex items-center gap-2">
               <code className="flex-1 text-2xl font-bold tracking-[0.2em] text-ink">{household.inviteCode}</code>
@@ -263,6 +356,61 @@ function FamilyHome({ household }: { household: Household }) {
           </Card>
         </div>
       )}
+
+      <Modal open={inviting} onClose={() => setInviting(false)} title="Invite to the family">
+        <InviteDialog household={household} from={user.name.split(' ')[0]} canRegenerate={isOwner} onRegenerate={() => newCode.mutate(undefined)} regenerating={newCode.isPending} />
+      </Modal>
+    </div>
+  );
+}
+
+function InviteDialog({ household, from, canRegenerate, onRegenerate, regenerating }: { household: Household; from: string; canRegenerate: boolean; onRegenerate: () => void; regenerating: boolean }) {
+  const [role, setRole] = useState<InviteRole>('partner');
+  const message = inviteMessage(role, household.name, household.inviteCode, from);
+  const copy = async (text: string, what: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${what} copied`);
+    } catch {
+      toast.error('Couldn’t copy — select the text and copy it instead');
+    }
+  };
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink-2">Who are you inviting?</p>
+        <Segmented<InviteRole> value={role} onChange={setRole} options={(Object.keys(ROLE_LABEL) as InviteRole[]).map((r) => ({ value: r, label: ROLE_LABEL[r] }))} className="w-full" />
+      </div>
+      <div className="rounded-2xl bg-brand-soft p-5 text-center">
+        <p className="text-xs font-semibold text-brand-fg">Invite code</p>
+        <code className="mt-1 block text-3xl font-bold tracking-[0.22em] text-ink" data-testid="invite-code">{household.inviteCode}</code>
+        <div className="mt-3 flex justify-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => copy(household.inviteCode, 'Invite code')}>
+            <Copy className="size-3.5" /> Copy code
+          </Button>
+          {canRegenerate && (
+            <Button size="sm" variant="ghost" onClick={onRegenerate} loading={regenerating}>
+              <RefreshCw className="size-3.5" /> New code
+            </Button>
+          )}
+        </div>
+      </div>
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink-2">Message</p>
+        <p className="rounded-2xl border border-line bg-surface-2 p-4 text-sm leading-relaxed text-ink-2" data-testid="invite-message">{message}</p>
+      </div>
+      <div className="flex gap-2">
+        <Button className="flex-1" onClick={() => copy(message, 'Invite message')}>
+          <Copy className="size-4" /> Copy message
+        </Button>
+        {canShare && (
+          <Button variant="secondary" onClick={() => navigator.share({ title: 'Join my family on Fintrack', text: message }).catch(() => {})}>
+            <Share2 className="size-4" /> Share
+          </Button>
+        )}
+      </div>
+      <p className="text-center text-xs text-muted">Everyone joins as a member and sees only the accounts and goals you share.</p>
     </div>
   );
 }

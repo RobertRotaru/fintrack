@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { BarChart3, Sparkles, Target, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, Sparkles, Target, Users } from 'lucide-react';
 import { COUNTRIES, CURRENCIES } from '@ft/core';
 import { useAuth } from '../lib/auth';
 import { Button, Field, Input, Select } from '../components/ui';
+import { Landscape } from '../components/illustrations';
+import { BrandMark } from '../components/Layout';
 
 export function AuthPage() {
   const { login, register } = useAuth();
@@ -27,15 +29,14 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between bg-hero p-12 text-hero-ink">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-white/15">
-            <TrendingUp className="size-5" strokeWidth={2.5} />
-          </div>
-          <span className="text-xl font-display font-extrabold tracking-tight">Fintrack</span>
+      <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-hero p-12 text-hero-ink">
+        <Landscape className="pointer-events-none absolute inset-x-0 bottom-0 h-[46%] w-full opacity-40 mix-blend-luminosity [mask-image:linear-gradient(to_bottom,transparent,black_55%)]" />
+        <div className="relative flex items-center gap-2.5">
+          <BrandMark className="size-9 !bg-white/15 !text-white" />
+          <span className="font-display text-[28px] leading-none tracking-[-0.02em]">Fintrack</span>
         </div>
-        <div>
-          <h1 className="text-5xl font-extrabold leading-tight tracking-tight">Know where every coin goes.</h1>
+        <div className="relative">
+          <h1 className="text-6xl leading-[1.02] tracking-[-0.025em]">Know where every coin goes.</h1>
           <p className="mt-4 max-w-md text-lg text-white/75">Accounts, budgets, goals and family money — with insights that actually tell you something.</p>
           <div className="mt-10 grid max-w-md grid-cols-2 gap-3">
             {[
@@ -50,13 +51,13 @@ export function AuthPage() {
             ))}
           </div>
         </div>
-        <p className="text-sm text-white/50">Add an expense in two taps.</p>
+        <p className="relative text-sm text-white/60">Add an expense in two taps.</p>
       </div>
 
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-4">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
+            <h2 className="text-4xl">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
             <p className="mt-1 text-muted">{mode === 'login' ? 'Sign in to continue.' : 'It takes less than a minute.'}</p>
           </div>
           {mode === 'register' && (

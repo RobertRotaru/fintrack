@@ -1,21 +1,35 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Table2 } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Link, useSearchParams } from 'react-router';
+import { ArrowRight, ChevronLeft, ChevronRight, Table2 } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer } from '../components/ResponsiveChart';
 import {
-  addMonths, monthKey, monthLabel, monthlyReport, pctChange, yearlyReport, type CategoryComparison, type TxKind,
+  ACCOUNT_TYPES, addMonths, convert, monthKey, monthLabel, monthlyReport, monthlyTotals, pctChange, yearlyReport, type CategoryComparison, type TxKind,
 } from '@ft/core';
+import { useUser } from '../lib/auth';
 import { useMoney, percent, formatDay } from '../lib/format';
 import { Icon } from '../lib/icons';
-import { useTxs } from '../lib/queries';
-import { CategoryDonut, ChartTooltip, Legend, SERIES, axisProps } from '../components/charts';
-import { Card, CardHeader, Delta, Empty, IconBadge, IconButton, PageHeader, Segmented, clsx } from '../components/ui';
+import { useAccounts, useFlows, useTxs } from '../lib/queries';
+import { CategoryDonut, ChartTooltip, Legend, NetWorthChart, SERIES, axisProps } from '../components/charts';
+import { Card, CardHeader, Delta, Empty, IconBadge, IconButton, PageHeader, Segmented, Trend, clsx } from '../components/ui';
 import { loadGate } from '../components/states';
 
 type Mode = 'month' | 'year';
+export type ReportTab = 'overview' | 'spending' | 'income' | 'networth';
+const TABS: { value: ReportTab; label: string }[] = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'spending', label: 'Spending' },
+  { value: 'income', label: 'Income' },
+  { value: 'networth', label: 'Net worth' },
+];
+const isTab = (t: string | null): t is ReportTab => TABS.some((x) => x.value === t);
 
 export function Reports() {
   const txsQ = useTxs();
   const { txs } = txsQ;
+  const [params, setParams] = useSearchParams();
+  const tab: ReportTab = isTab(params.get('tab')) ? (params.get('tab') as ReportTab) : 'overview';
+  const setTab = (t: ReportTab) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true });
   const [mode, setMode] = useState<Mode>('month');
   const [month, setMonth] = useState(monthKey(new Date()));
   const [year, setYear] = useState(new Date().getFullYear());
@@ -28,42 +42,223 @@ export function Reports() {
   const gate = loadGate([txsQ], 'charts');
   if (gate) return gate;
 
+  const periodControls = (
+    <div className="flex flex-wrap items-center gap-2">
+      {tab !== 'overview' && (
+        <Segmented<Mode>
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'month', label: 'Monthly' },
+            { value: 'year', label: 'Yearly' },
+          ]}
+        />
+      )}
+      <div className="flex items-center rounded-full border border-line bg-surface shadow-[var(--shadow)]">
+        <IconButton label="Previous period" onClick={() => step(-1)} className="rounded-full">
+          <ChevronLeft className="size-4" />
+        </IconButton>
+        <span className="min-w-32 text-center text-sm font-semibold">{label}</span>
+        <IconButton label="Next period" onClick={() => step(1)} disabled={!canNext} className="rounded-full disabled:opacity-30">
+          <ChevronRight className="size-4" />
+        </IconButton>
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      <PageHeader
-        title="Reports"
-        subtitle="Where your money came from and where it went."
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Segmented<Mode>
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'month', label: 'Monthly' },
-                { value: 'year', label: 'Yearly' },
-              ]}
-            />
-            <div className="flex items-center rounded-xl border border-line bg-surface">
-              <IconButton label="Previous period" onClick={() => step(-1)}>
-                <ChevronLeft className="size-4" />
-              </IconButton>
-              <span className="min-w-32 text-center text-sm font-semibold">{label}</span>
-              <IconButton label="Next period" onClick={() => step(1)} disabled={!canNext} className="disabled:opacity-30">
-                <ChevronRight className="size-4" />
-              </IconButton>
-            </div>
-          </div>
-        }
-      />
-      {!txs.length ? (
+      <PageHeader title="Reports" subtitle="Where your money came from, where it went, and what it adds up to." />
+      <div className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-line">
+        <div role="tablist" aria-label="Report" className="-mb-px flex gap-6">
+          {TABS.map((t) => (
+            <button
+              key={t.value}
+              role="tab"
+              type="button"
+              aria-selected={tab === t.value}
+              onClick={() => setTab(t.value)}
+              className={clsx(
+                'border-b-2 pb-3 text-sm font-medium transition cursor-pointer',
+                tab === t.value ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {tab !== 'networth' && txs.length > 0 && <div className="pb-3">{periodControls}</div>}
+      </div>
+      {tab === 'networth' ? (
+        <NetWorthReport />
+      ) : !txs.length ? (
         <Card>
           <Empty icon="bar-chart" title="No data to report yet">Reports fill in as you add income and expenses.</Empty>
         </Card>
+      ) : tab === 'overview' ? (
+        <Overview month={month} />
       ) : mode === 'month' ? (
-        <MonthReport month={month} />
+        <MonthReport month={month} kind={tab === 'income' ? 'income' : 'expense'} />
       ) : (
-        <YearReport year={year} />
+        <YearReport year={year} kind={tab === 'income' ? 'income' : 'expense'} />
       )}
+    </div>
+  );
+}
+
+/** The editorial summary: three numbers, one sentence, one chart. */
+function Overview({ month }: { month: string }) {
+  const money = useMoney();
+  const { txs } = useTxs();
+  const r = useMemo(() => monthlyReport(txs, month), [txs, month]);
+  const six = useMemo(() => monthlyTotals(txs, addMonths(month, -5), month).map((m) => ({ ...m, label: monthLabel(m.month) })), [txs, month]);
+  const prevLabel = monthLabel(addMonths(month, -1), 'long');
+  const sentence =
+    r.income > 0
+      ? r.net >= 0
+        ? `You kept ${percent(r.savingsRate)} of what came in during ${monthLabel(month, 'long')}.`
+        : `You spent ${money(-r.net)} more than came in during ${monthLabel(month, 'long')}.`
+      : r.expense > 0
+        ? `No income recorded in ${monthLabel(month, 'long')} yet.`
+        : `A quiet ${monthLabel(month, 'long')} — nothing recorded.`;
+  const metrics = [
+    { label: 'Total income', value: r.income, change: pctChange(r.income, r.prev.income), inverse: false },
+    { label: 'Total spending', value: r.expense, change: pctChange(r.expense, r.prev.expense), inverse: true },
+    { label: 'Net change', value: r.net, change: null, inverse: false },
+  ];
+  // A percentage of a net figure is meaningless when it changes sign, so net change compares amounts.
+  const netDiff = r.net - r.prev.net;
+  return (
+    <div className="space-y-12">
+      <section>
+        <div className="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h2 className="text-[28px] leading-tight">Monthly overview</h2>
+          <span className="text-sm text-muted">{monthLabel(month, 'long')}</span>
+        </div>
+        <div className="grid gap-px overflow-hidden rounded-[24px] border border-line bg-line sm:grid-cols-3" data-testid="overview-metrics">
+          {metrics.map((m) => (
+            <div key={m.label} className="bg-surface p-6 sm:p-7">
+              <p className="text-sm font-medium text-ink-2">{m.label}</p>
+              <p className={clsx('figure mt-2 truncate text-4xl leading-none', m.label === 'Net change' && m.value < 0 && 'text-bad')}>
+                {money(m.value, { sign: m.label === 'Net change' })}
+              </p>
+              <div className="mt-2">
+                {m.label === 'Net change' ? (
+                  <span className="text-sm text-muted">
+                    <span className={clsx('font-medium num', netDiff >= 0 ? 'text-good' : 'text-bad')}>{money(netDiff, { sign: true })}</span> vs. {prevLabel}
+                  </span>
+                ) : (
+                  <Trend value={m.change} inverse={m.inverse} suffix={`vs. ${prevLabel}`} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-8 max-w-2xl font-display text-[26px] leading-snug text-ink-2" data-testid="overview-sentence">
+          {sentence}
+        </p>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <Card className="!p-7">
+          <CardHeader title="Income and spending" subtitle="The last six months" />
+          <Legend
+            items={[
+              { label: 'Income', color: 'var(--emerald)' },
+              { label: 'Spending', color: 'var(--cobalt)' },
+            ]}
+          />
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={six} margin={{ top: 8, right: 0, left: 0, bottom: 0 }} barGap={6} barCategoryGap="26%">
+                <CartesianGrid vertical={false} stroke="var(--grid)" strokeDasharray="2 6" />
+                <XAxis dataKey="label" {...axisProps} />
+                <YAxis {...axisProps} width={76} tickFormatter={(v) => money(v, { compact: true })} tickCount={4} />
+                <Tooltip cursor={{ fill: 'var(--surface-2)', radius: 12 }} content={<ChartTooltip format={(n) => money(n)} />} />
+                <Bar dataKey="income" name="Income" fill="var(--emerald)" radius={[8, 8, 8, 8]} maxBarSize={22} />
+                <Bar dataKey="expense" name="Spending" fill="var(--cobalt)" radius={[8, 8, 8, 8]} maxBarSize={22} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card className="!p-7">
+          <CardHeader title="Savings rate" subtitle="Share of income you kept" />
+          <p className="figure text-5xl">{r.income ? percent(r.savingsRate) : '—'}</p>
+          <p className="mt-1 text-sm text-muted">{r.prev.income ? `${percent(r.prev.savingsRate)} in ${prevLabel}` : 'Nothing to compare yet'}</p>
+          <ul className="mt-6 space-y-3">
+            {six.slice(-4).map((m) => (
+              <li key={m.month} className="flex items-center gap-3 text-sm">
+                <span className="w-10 text-muted">{m.label}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3">
+                  <div className="grow-x h-full rounded-full bg-emerald" style={{ width: `${Math.max(0, Math.min(100, m.savingsRate * 100))}%` }} />
+                </div>
+                <span className="w-10 text-right font-medium num">{m.income ? percent(m.savingsRate) : '—'}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/insights" className="group mt-6 inline-flex items-center gap-1 text-sm font-medium text-brand-fg">
+            What’s behind it <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+          </Link>
+        </Card>
+      </section>
+    </div>
+  );
+}
+
+/** Net worth over time, and what it's made of. */
+function NetWorthReport() {
+  const user = useUser();
+  const money = useMoney();
+  const accountsQ = useAccounts();
+  const flows = useFlows();
+  const gate = loadGate([accountsQ], 'charts');
+  if (gate) return gate;
+  const active = (accountsQ.data ?? []).filter((a) => !a.archived);
+  if (!active.length) {
+    return (
+      <Card>
+        <Empty icon="wallet" title="No accounts yet">Add the accounts you use and your net worth history appears here.</Empty>
+      </Card>
+    );
+  }
+  const base = (n: number, c: string) => convert(n, c, user.baseCurrency);
+  const groups = ACCOUNT_TYPES.map((t) => ({ ...t, total: active.filter((a) => a.type === t.type).reduce((s, a) => s + base(a.balance, a.currency), 0) })).filter((g) => g.total !== 0);
+  const assets = groups.filter((g) => g.total > 0).reduce((s, g) => s + g.total, 0);
+  return (
+    <div className="space-y-10">
+      <Card className="!p-7 glow">
+        <p className="eyebrow">Net worth</p>
+        <p className="figure mt-2 text-5xl leading-none">{money(active.reduce((s, a) => s + base(a.balance, a.currency), 0))}</p>
+        <div className="mt-6">
+          <NetWorthChart accounts={active} flows={flows} currency={user.baseCurrency} height={320} initialRange="1Y" />
+        </div>
+      </Card>
+      <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="!p-7">
+          <CardHeader title="What it’s made of" subtitle="By account type, at today’s rates" />
+          <ul className="space-y-4">
+            {groups.map((g) => (
+              <li key={g.type}>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-ink-2">
+                    <Icon name={g.icon} className="size-4 text-muted" /> {g.label}
+                  </span>
+                  <span className={clsx('font-semibold num', g.total < 0 && 'text-bad')}>{money(g.total)}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-surface-3">
+                  <div className="grow-x h-full rounded-full" style={{ width: `${assets ? Math.min(100, (Math.abs(g.total) / assets) * 100) : 0}%`, background: g.total < 0 ? 'var(--bad)' : 'var(--emerald)' }} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <Card className="!p-7">
+          <CardHeader title="Where it’s heading" subtitle="A six-month outlook from your real income and spending." />
+          <Link to="/projections" className="group inline-flex items-center gap-1 text-sm font-medium text-brand-fg">
+            Open projections <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+          </Link>
+        </Card>
+      </section>
     </div>
   );
 }
@@ -72,7 +267,7 @@ function Kpi({ label, value, change, inverse, hint }: { label: string; value: st
   return (
     <Card className="!p-4">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className="mt-1 font-display text-xl sm:text-2xl font-bold tracking-tight num truncate">{value}</p>
+      <p className="mt-1 figure text-xl sm:text-2xl  tracking-tight num truncate">{value}</p>
       <div className="mt-1 flex items-center gap-1.5 text-xs text-muted">
         {change !== undefined && <Delta value={change} inverse={inverse} />}
         {hint}
@@ -132,10 +327,9 @@ function CategoryTable({ rows, previousLabel, kind, compare = true }: { rows: Ca
   );
 }
 
-function MonthReport({ month }: { month: string }) {
+function MonthReport({ month, kind }: { month: string; kind: TxKind }) {
   const money = useMoney();
   const { txs } = useTxs();
-  const [kind, setKind] = useState<TxKind>('expense');
   const r = useMemo(() => monthlyReport(txs, month), [txs, month]);
   const prevLabel = monthLabel(addMonths(month, -1), 'short');
   const byCategory = kind === 'expense' ? r.expenseByCategory : r.incomeByCategory;
@@ -151,19 +345,7 @@ function MonthReport({ month }: { month: string }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader
-            title={kind === 'expense' ? 'Spending by category' : 'Income by source'}
-            action={
-              <Segmented<TxKind>
-                value={kind}
-                onChange={setKind}
-                options={[
-                  { value: 'expense', label: 'Spent' },
-                  { value: 'income', label: 'Earned' },
-                ]}
-              />
-            }
-          />
+          <CardHeader title={kind === 'expense' ? 'Spending by category' : 'Income by source'} />
           {byCategory.length ? (
             <CategoryDonut data={byCategory} total={kind === 'expense' ? r.expense : r.income} label={kind === 'expense' ? 'Spent' : 'Earned'} />
           ) : (
@@ -241,10 +423,9 @@ function MonthReport({ month }: { month: string }) {
   );
 }
 
-function YearReport({ year }: { year: number }) {
+function YearReport({ year, kind }: { year: number; kind: TxKind }) {
   const money = useMoney();
   const { txs } = useTxs();
-  const [kind, setKind] = useState<TxKind>('expense');
   const [showTable, setShowTable] = useState(false);
   const r = useMemo(() => yearlyReport(txs, year), [txs, year]);
   const months = r.months.map((m) => ({ ...m, label: monthLabel(m.month) }));
@@ -387,16 +568,6 @@ function YearReport({ year }: { year: number }) {
         <CardHeader
           title={`Categories in ${year}`}
           subtitle={yoy ? `Change compares the same months of ${year - 1}` : undefined}
-          action={
-            <Segmented<TxKind>
-              value={kind}
-              onChange={setKind}
-              options={[
-                { value: 'expense', label: 'Spent' },
-                { value: 'income', label: 'Earned' },
-              ]}
-            />
-          }
         />
         <CategoryTable rows={byCategory} previousLabel={c.months === 12 ? String(year - 1) : `${year - 1} (same mo.)`} kind={kind} compare={yoy} />
       </Card>

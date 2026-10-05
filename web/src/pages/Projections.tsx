@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Repeat } from 'lucide-react';
-import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer } from '../components/ResponsiveChart';
 import { convert, monthLabel, project } from '@ft/core';
 import { useUser } from '../lib/auth';
 import { useMoney } from '../lib/format';
@@ -81,19 +82,19 @@ export function Projections() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="!p-4">
           <p className="text-xs text-muted">Expected income / mo</p>
-          <p className="font-display mt-1 text-xl font-bold num">{money(nextMonth.income)}</p>
+          <p className="figure mt-1 text-xl num">{money(nextMonth.income)}</p>
         </Card>
         <Card className="!p-4">
           <p className="text-xs text-muted">Expected spending / mo</p>
-          <p className="font-display mt-1 text-xl font-bold num">{money(nextMonth.expense)}</p>
+          <p className="figure mt-1 text-xl num">{money(nextMonth.expense)}</p>
         </Card>
         <Card className="!p-4">
           <p className="text-xs text-muted">Expected to save / mo</p>
-          <p className={clsx('font-display mt-1 text-xl font-bold num', nextMonth.net < 0 && 'text-bad')}>{money(nextMonth.net, { sign: true })}</p>
+          <p className={clsx('figure mt-1 text-xl num', nextMonth.net < 0 && 'text-bad')}>{money(nextMonth.net, { sign: true })}</p>
         </Card>
         <Card className="!p-4">
           <p className="text-xs text-muted">Net worth in {HORIZON} months</p>
-          <p className="font-display mt-1 text-xl font-bold num">{money(finalWorth)}</p>
+          <p className="figure mt-1 text-xl num">{money(finalWorth)}</p>
           <p className={clsx('text-xs font-medium num', finalWorth >= netWorth ? 'text-good' : 'text-bad')}>{money(finalWorth - netWorth, { sign: true })}</p>
         </Card>
       </div>
