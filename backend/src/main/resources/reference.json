@@ -1,0 +1,1713 @@
+{
+  "$comment": "Generated from @ft/core by `npm run export:backend-data` — do not edit by hand.",
+  "currencies": [
+    {
+      "code": "EUR",
+      "perEur": 1,
+      "decimals": 2
+    },
+    {
+      "code": "RON",
+      "perEur": 4.97,
+      "decimals": 2
+    },
+    {
+      "code": "MDL",
+      "perEur": 19.6,
+      "decimals": 2
+    },
+    {
+      "code": "USD",
+      "perEur": 1.08,
+      "decimals": 2
+    },
+    {
+      "code": "GBP",
+      "perEur": 0.85,
+      "decimals": 2
+    },
+    {
+      "code": "PLN",
+      "perEur": 4.3,
+      "decimals": 2
+    },
+    {
+      "code": "HUF",
+      "perEur": 395,
+      "decimals": 2
+    },
+    {
+      "code": "BGN",
+      "perEur": 1.956,
+      "decimals": 2
+    },
+    {
+      "code": "CHF",
+      "perEur": 0.95,
+      "decimals": 2
+    },
+    {
+      "code": "CAD",
+      "perEur": 1.47,
+      "decimals": 2
+    },
+    {
+      "code": "BTC",
+      "perEur": 0.000016,
+      "decimals": 8
+    },
+    {
+      "code": "ETH",
+      "perEur": 0.00038,
+      "decimals": 8
+    },
+    {
+      "code": "USDT",
+      "perEur": 1.08,
+      "decimals": 2
+    }
+  ],
+  "countries": [
+    {
+      "code": "RO",
+      "name": "Romania",
+      "currency": "RON"
+    },
+    {
+      "code": "MD",
+      "name": "Moldova",
+      "currency": "MDL"
+    },
+    {
+      "code": "US",
+      "name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "GB",
+      "name": "United Kingdom",
+      "currency": "GBP"
+    },
+    {
+      "code": "DE",
+      "name": "Germany",
+      "currency": "EUR"
+    },
+    {
+      "code": "FR",
+      "name": "France",
+      "currency": "EUR"
+    },
+    {
+      "code": "ES",
+      "name": "Spain",
+      "currency": "EUR"
+    },
+    {
+      "code": "IT",
+      "name": "Italy",
+      "currency": "EUR"
+    },
+    {
+      "code": "NL",
+      "name": "Netherlands",
+      "currency": "EUR"
+    },
+    {
+      "code": "AT",
+      "name": "Austria",
+      "currency": "EUR"
+    },
+    {
+      "code": "IE",
+      "name": "Ireland",
+      "currency": "EUR"
+    },
+    {
+      "code": "PL",
+      "name": "Poland",
+      "currency": "PLN"
+    },
+    {
+      "code": "HU",
+      "name": "Hungary",
+      "currency": "HUF"
+    },
+    {
+      "code": "BG",
+      "name": "Bulgaria",
+      "currency": "BGN"
+    },
+    {
+      "code": "CH",
+      "name": "Switzerland",
+      "currency": "CHF"
+    },
+    {
+      "code": "CA",
+      "name": "Canada",
+      "currency": "CAD"
+    }
+  ],
+  "defaultCategories": [
+    {
+      "kind": "expense",
+      "name": "Housing",
+      "icon": "home",
+      "color": "#6366f1"
+    },
+    {
+      "kind": "expense",
+      "name": "Utilities",
+      "icon": "zap",
+      "color": "#f59e0b"
+    },
+    {
+      "kind": "expense",
+      "name": "Internet & Phone",
+      "icon": "wifi",
+      "color": "#0ea5e9"
+    },
+    {
+      "kind": "expense",
+      "name": "Insurance",
+      "icon": "shield",
+      "color": "#64748b"
+    },
+    {
+      "kind": "expense",
+      "name": "Groceries",
+      "icon": "shopping-cart",
+      "color": "#22c55e"
+    },
+    {
+      "kind": "expense",
+      "name": "Transport",
+      "icon": "bus",
+      "color": "#3b82f6"
+    },
+    {
+      "kind": "expense",
+      "name": "Fuel",
+      "icon": "fuel",
+      "color": "#ef4444"
+    },
+    {
+      "kind": "expense",
+      "name": "Health",
+      "icon": "heart-pulse",
+      "color": "#ec4899"
+    },
+    {
+      "kind": "expense",
+      "name": "Kids",
+      "icon": "baby",
+      "color": "#f472b6"
+    },
+    {
+      "kind": "expense",
+      "name": "Pets",
+      "icon": "paw-print",
+      "color": "#a16207"
+    },
+    {
+      "kind": "expense",
+      "name": "Education",
+      "icon": "graduation-cap",
+      "color": "#8b5cf6"
+    },
+    {
+      "kind": "expense",
+      "name": "Dining Out",
+      "icon": "utensils",
+      "color": "#f97316"
+    },
+    {
+      "kind": "expense",
+      "name": "Coffee & Snacks",
+      "icon": "coffee",
+      "color": "#92400e"
+    },
+    {
+      "kind": "expense",
+      "name": "Shopping",
+      "icon": "shopping-bag",
+      "color": "#d946ef"
+    },
+    {
+      "kind": "expense",
+      "name": "Entertainment",
+      "icon": "clapperboard",
+      "color": "#a855f7"
+    },
+    {
+      "kind": "expense",
+      "name": "Subscriptions",
+      "icon": "repeat",
+      "color": "#14b8a6"
+    },
+    {
+      "kind": "expense",
+      "name": "Travel",
+      "icon": "plane",
+      "color": "#06b6d4"
+    },
+    {
+      "kind": "expense",
+      "name": "Personal Care",
+      "icon": "sparkles",
+      "color": "#fb7185"
+    },
+    {
+      "kind": "expense",
+      "name": "Sports & Fitness",
+      "icon": "dumbbell",
+      "color": "#84cc16"
+    },
+    {
+      "kind": "expense",
+      "name": "Gifts & Donations",
+      "icon": "gift",
+      "color": "#e11d48"
+    },
+    {
+      "kind": "expense",
+      "name": "Debt Payments",
+      "icon": "landmark",
+      "color": "#475569"
+    },
+    {
+      "kind": "expense",
+      "name": "Taxes & Fees",
+      "icon": "receipt",
+      "color": "#78716c"
+    },
+    {
+      "kind": "expense",
+      "name": "Other",
+      "icon": "circle-dashed",
+      "color": "#94a3b8"
+    },
+    {
+      "kind": "income",
+      "name": "Salary",
+      "icon": "briefcase",
+      "color": "#10b981"
+    },
+    {
+      "kind": "income",
+      "name": "Bonus",
+      "icon": "award",
+      "color": "#22c55e"
+    },
+    {
+      "kind": "income",
+      "name": "Freelance",
+      "icon": "laptop",
+      "color": "#06b6d4"
+    },
+    {
+      "kind": "income",
+      "name": "Business",
+      "icon": "store",
+      "color": "#0ea5e9"
+    },
+    {
+      "kind": "income",
+      "name": "Investments",
+      "icon": "trending-up",
+      "color": "#6366f1"
+    },
+    {
+      "kind": "income",
+      "name": "Interest",
+      "icon": "percent",
+      "color": "#8b5cf6"
+    },
+    {
+      "kind": "income",
+      "name": "Rental",
+      "icon": "building",
+      "color": "#f59e0b"
+    },
+    {
+      "kind": "income",
+      "name": "Benefits",
+      "icon": "hand-heart",
+      "color": "#ec4899"
+    },
+    {
+      "kind": "income",
+      "name": "Gifts",
+      "icon": "gift",
+      "color": "#f43f5e"
+    },
+    {
+      "kind": "income",
+      "name": "Refunds",
+      "icon": "undo-2",
+      "color": "#14b8a6"
+    },
+    {
+      "kind": "income",
+      "name": "Other",
+      "icon": "circle-dashed",
+      "color": "#94a3b8"
+    }
+  ],
+  "institutionsByCountry": {
+    "RO": [
+      {
+        "id": "ro-bt",
+        "name": "Banca Transilvania",
+        "color": "#005EB8",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-bcr",
+        "name": "BCR",
+        "color": "#0B3B7C",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-brd",
+        "name": "BRD - Groupe Société Générale",
+        "color": "#E60028",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-ing",
+        "name": "ING Bank România",
+        "color": "#FF6200",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-raiffeisen",
+        "name": "Raiffeisen Bank",
+        "color": "#FFE600",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-cec",
+        "name": "CEC Bank",
+        "color": "#00529B",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-unicredit",
+        "name": "UniCredit Bank",
+        "color": "#E2001A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-garanti",
+        "name": "Garanti BBVA",
+        "color": "#00A19A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-libra",
+        "name": "Libra Internet Bank",
+        "color": "#00B2A9",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-exim",
+        "name": "Exim Banca Românească",
+        "color": "#003B71",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-salt",
+        "name": "Salt Bank",
+        "color": "#111111",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-otp",
+        "name": "OTP Bank",
+        "color": "#52AE30",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ro-tbi",
+        "name": "TBI Bank",
+        "color": "#FF5A00",
+        "types": [
+          "loan",
+          "credit"
+        ]
+      },
+      {
+        "id": "ro-tradeville",
+        "name": "Tradeville",
+        "color": "#004B87",
+        "types": [
+          "investment"
+        ]
+      },
+      {
+        "id": "ro-bvb",
+        "name": "BT Capital Partners",
+        "color": "#005EB8",
+        "types": [
+          "investment"
+        ]
+      }
+    ],
+    "MD": [
+      {
+        "id": "md-maib",
+        "name": "maib",
+        "color": "#00B0A9",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "md-mici",
+        "name": "Moldindconbank",
+        "color": "#004A99",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "md-victoria",
+        "name": "Victoriabank",
+        "color": "#E30613",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "md-otp",
+        "name": "OTP Bank Moldova",
+        "color": "#52AE30",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "US": [
+      {
+        "id": "us-chase",
+        "name": "Chase",
+        "color": "#117ACA",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "us-boa",
+        "name": "Bank of America",
+        "color": "#E31837",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "us-wells",
+        "name": "Wells Fargo",
+        "color": "#D71E28",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "us-citi",
+        "name": "Citi",
+        "color": "#003B70",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "us-capone",
+        "name": "Capital One",
+        "color": "#004977",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "us-amex",
+        "name": "American Express",
+        "color": "#2E77BC",
+        "types": [
+          "credit",
+          "savings"
+        ]
+      },
+      {
+        "id": "us-discover",
+        "name": "Discover",
+        "color": "#FF6000",
+        "types": [
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "us-ally",
+        "name": "Ally Bank",
+        "color": "#650360",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "us-usbank",
+        "name": "U.S. Bank",
+        "color": "#0C2074",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "us-schwab",
+        "name": "Charles Schwab",
+        "color": "#00A0DF",
+        "types": [
+          "investment"
+        ]
+      },
+      {
+        "id": "us-fidelity",
+        "name": "Fidelity",
+        "color": "#368727",
+        "types": [
+          "investment"
+        ]
+      },
+      {
+        "id": "us-vanguard",
+        "name": "Vanguard",
+        "color": "#96151D",
+        "types": [
+          "investment"
+        ]
+      },
+      {
+        "id": "us-robinhood",
+        "name": "Robinhood",
+        "color": "#00C805",
+        "types": [
+          "investment",
+          "crypto"
+        ]
+      },
+      {
+        "id": "us-sofi",
+        "name": "SoFi",
+        "color": "#00A9CE",
+        "types": [
+          "debit",
+          "savings",
+          "credit",
+          "investment",
+          "crypto"
+        ]
+      }
+    ],
+    "GB": [
+      {
+        "id": "gb-barclays",
+        "name": "Barclays",
+        "color": "#00AEEF",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "gb-hsbc",
+        "name": "HSBC UK",
+        "color": "#DB0011",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "gb-lloyds",
+        "name": "Lloyds Bank",
+        "color": "#006A4D",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "gb-natwest",
+        "name": "NatWest",
+        "color": "#42145F",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "gb-santander",
+        "name": "Santander UK",
+        "color": "#EC0000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "gb-nationwide",
+        "name": "Nationwide",
+        "color": "#1A1F71",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "gb-monzo",
+        "name": "Monzo",
+        "color": "#FF4F40",
+        "types": [
+          "debit",
+          "savings",
+          "credit",
+          "investment",
+          "crypto"
+        ]
+      },
+      {
+        "id": "gb-starling",
+        "name": "Starling Bank",
+        "color": "#7433FF",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "gb-chase",
+        "name": "Chase UK",
+        "color": "#117ACA",
+        "types": [
+          "debit",
+          "savings"
+        ]
+      },
+      {
+        "id": "gb-vanguard",
+        "name": "Vanguard UK",
+        "color": "#96151D",
+        "types": [
+          "investment"
+        ]
+      },
+      {
+        "id": "gb-hl",
+        "name": "Hargreaves Lansdown",
+        "color": "#00205B",
+        "types": [
+          "investment"
+        ]
+      }
+    ],
+    "DE": [
+      {
+        "id": "de-deutsche",
+        "name": "Deutsche Bank",
+        "color": "#0018A8",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-commerz",
+        "name": "Commerzbank",
+        "color": "#FFCC00",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-sparkasse",
+        "name": "Sparkasse",
+        "color": "#FF0000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-volksbank",
+        "name": "Volksbank / Raiffeisenbank",
+        "color": "#0066B3",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-ing",
+        "name": "ING Deutschland",
+        "color": "#FF6200",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-dkb",
+        "name": "DKB",
+        "color": "#148DEA",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-comdirect",
+        "name": "comdirect",
+        "color": "#FFF500",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "de-traderepublic",
+        "name": "Trade Republic",
+        "color": "#000000",
+        "types": [
+          "investment",
+          "crypto"
+        ]
+      },
+      {
+        "id": "de-scalable",
+        "name": "Scalable Capital",
+        "color": "#28D4C4",
+        "types": [
+          "investment"
+        ]
+      }
+    ],
+    "FR": [
+      {
+        "id": "fr-bnp",
+        "name": "BNP Paribas",
+        "color": "#00915A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "fr-ca",
+        "name": "Crédit Agricole",
+        "color": "#009597",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "fr-sg",
+        "name": "Société Générale",
+        "color": "#E60028",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "fr-lcl",
+        "name": "LCL",
+        "color": "#0A2A73",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "fr-boursobank",
+        "name": "BoursoBank",
+        "color": "#D6006E",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "fr-cm",
+        "name": "Crédit Mutuel",
+        "color": "#E2001A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "fr-lbp",
+        "name": "La Banque Postale",
+        "color": "#004B9B",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "ES": [
+      {
+        "id": "es-santander",
+        "name": "Santander",
+        "color": "#EC0000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "es-bbva",
+        "name": "BBVA",
+        "color": "#004481",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "es-caixa",
+        "name": "CaixaBank",
+        "color": "#007EAE",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "es-sabadell",
+        "name": "Banco Sabadell",
+        "color": "#006DFF",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "es-ing",
+        "name": "ING España",
+        "color": "#FF6200",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "es-openbank",
+        "name": "Openbank",
+        "color": "#EC0000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      }
+    ],
+    "IT": [
+      {
+        "id": "it-intesa",
+        "name": "Intesa Sanpaolo",
+        "color": "#006A3B",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "it-unicredit",
+        "name": "UniCredit",
+        "color": "#E2001A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "it-fineco",
+        "name": "Fineco",
+        "color": "#00366F",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "it-bpm",
+        "name": "Banco BPM",
+        "color": "#00539B",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "it-poste",
+        "name": "Poste Italiane",
+        "color": "#FFE000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "NL": [
+      {
+        "id": "nl-ing",
+        "name": "ING",
+        "color": "#FF6200",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "nl-rabo",
+        "name": "Rabobank",
+        "color": "#000099",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "nl-abn",
+        "name": "ABN AMRO",
+        "color": "#009286",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "nl-bunq",
+        "name": "bunq",
+        "color": "#3394D7",
+        "types": [
+          "debit",
+          "savings",
+          "credit",
+          "investment",
+          "crypto"
+        ]
+      },
+      {
+        "id": "nl-sns",
+        "name": "SNS",
+        "color": "#4E2A84",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "AT": [
+      {
+        "id": "at-erste",
+        "name": "Erste Bank",
+        "color": "#2870ED",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "at-raiffeisen",
+        "name": "Raiffeisen",
+        "color": "#FFE600",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "at-bawag",
+        "name": "BAWAG",
+        "color": "#00A0DC",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "at-george",
+        "name": "George (Erste)",
+        "color": "#2870ED",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "IE": [
+      {
+        "id": "ie-aib",
+        "name": "AIB",
+        "color": "#7F2B7B",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ie-boi",
+        "name": "Bank of Ireland",
+        "color": "#0000AA",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ie-ptsb",
+        "name": "PTSB",
+        "color": "#6A1B9A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "PL": [
+      {
+        "id": "pl-pko",
+        "name": "PKO Bank Polski",
+        "color": "#003574",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "pl-pekao",
+        "name": "Bank Pekao",
+        "color": "#C8102E",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "pl-mbank",
+        "name": "mBank",
+        "color": "#E30613",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "pl-santander",
+        "name": "Santander Bank Polska",
+        "color": "#EC0000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "pl-ing",
+        "name": "ING Bank Śląski",
+        "color": "#FF6200",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      }
+    ],
+    "HU": [
+      {
+        "id": "hu-otp",
+        "name": "OTP Bank",
+        "color": "#52AE30",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "hu-kh",
+        "name": "K&H Bank",
+        "color": "#0071BC",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "hu-mbh",
+        "name": "MBH Bank",
+        "color": "#0A3C6E",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "BG": [
+      {
+        "id": "bg-dsk",
+        "name": "DSK Bank",
+        "color": "#00843D",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "bg-unicredit",
+        "name": "UniCredit Bulbank",
+        "color": "#E2001A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "bg-ubb",
+        "name": "UBB",
+        "color": "#003B6F",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "bg-fibank",
+        "name": "Fibank",
+        "color": "#F7A600",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      }
+    ],
+    "CH": [
+      {
+        "id": "ch-ubs",
+        "name": "UBS",
+        "color": "#E60000",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ch-postfinance",
+        "name": "PostFinance",
+        "color": "#FFCC00",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ch-raiffeisen",
+        "name": "Raiffeisen Schweiz",
+        "color": "#FFE600",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan"
+        ]
+      },
+      {
+        "id": "ch-zkb",
+        "name": "Zürcher Kantonalbank",
+        "color": "#0064A8",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ch-neon",
+        "name": "neon",
+        "color": "#FF7E9C",
+        "types": [
+          "debit"
+        ]
+      }
+    ],
+    "CA": [
+      {
+        "id": "ca-rbc",
+        "name": "RBC Royal Bank",
+        "color": "#005DAA",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ca-td",
+        "name": "TD Canada Trust",
+        "color": "#008A00",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ca-scotia",
+        "name": "Scotiabank",
+        "color": "#EC111A",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ca-bmo",
+        "name": "BMO",
+        "color": "#0079C1",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ca-cibc",
+        "name": "CIBC",
+        "color": "#C41F3E",
+        "types": [
+          "debit",
+          "credit",
+          "savings",
+          "loan",
+          "investment"
+        ]
+      },
+      {
+        "id": "ca-wealthsimple",
+        "name": "Wealthsimple",
+        "color": "#000000",
+        "types": [
+          "investment",
+          "crypto"
+        ]
+      }
+    ]
+  },
+  "globalInstitutions": [
+    {
+      "id": "revolut",
+      "name": "Revolut",
+      "color": "#191C1F",
+      "types": [
+        "debit",
+        "savings",
+        "credit",
+        "investment",
+        "crypto"
+      ]
+    },
+    {
+      "id": "wise",
+      "name": "Wise",
+      "color": "#9FE870",
+      "types": [
+        "debit",
+        "savings"
+      ]
+    },
+    {
+      "id": "n26",
+      "name": "N26",
+      "color": "#36A18B",
+      "types": [
+        "debit",
+        "savings",
+        "credit"
+      ]
+    },
+    {
+      "id": "paypal",
+      "name": "PayPal",
+      "color": "#003087",
+      "types": [
+        "debit"
+      ]
+    },
+    {
+      "id": "ibkr",
+      "name": "Interactive Brokers",
+      "color": "#D81222",
+      "types": [
+        "investment"
+      ]
+    },
+    {
+      "id": "trading212",
+      "name": "Trading 212",
+      "color": "#1B9CFC",
+      "types": [
+        "investment"
+      ]
+    },
+    {
+      "id": "etoro",
+      "name": "eToro",
+      "color": "#13C636",
+      "types": [
+        "investment",
+        "crypto"
+      ]
+    },
+    {
+      "id": "xtb",
+      "name": "XTB",
+      "color": "#E2231A",
+      "types": [
+        "investment"
+      ]
+    },
+    {
+      "id": "degiro",
+      "name": "DEGIRO",
+      "color": "#00A3E0",
+      "types": [
+        "investment"
+      ]
+    },
+    {
+      "id": "binance",
+      "name": "Binance",
+      "color": "#F0B90B",
+      "types": [
+        "crypto"
+      ]
+    },
+    {
+      "id": "coinbase",
+      "name": "Coinbase",
+      "color": "#0052FF",
+      "types": [
+        "crypto"
+      ]
+    },
+    {
+      "id": "kraken",
+      "name": "Kraken",
+      "color": "#5741D9",
+      "types": [
+        "crypto"
+      ]
+    },
+    {
+      "id": "bitpanda",
+      "name": "Bitpanda",
+      "color": "#2ABF7C",
+      "types": [
+        "investment",
+        "crypto"
+      ]
+    },
+    {
+      "id": "ledger",
+      "name": "Ledger (self-custody)",
+      "color": "#000000",
+      "types": [
+        "crypto"
+      ]
+    },
+    {
+      "id": "metamask",
+      "name": "MetaMask",
+      "color": "#F6851B",
+      "types": [
+        "crypto"
+      ]
+    }
+  ],
+  "discretionaryCategories": [
+    "Dining Out",
+    "Coffee & Snacks",
+    "Shopping",
+    "Entertainment",
+    "Subscriptions",
+    "Travel",
+    "Personal Care",
+    "Sports & Fitness",
+    "Gifts & Donations"
+  ]
+}
