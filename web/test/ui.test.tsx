@@ -156,6 +156,16 @@ describe('formatting helpers', () => {
     expect(parseAmount('12k')).toBeNaN();
     expect(parseAmount('-3')).toBeNaN();
     expect(parseAmount('-3', true)).toBe(-3);
+    // Thousands separators in either convention (a Romanian keyboard types "1.250,50").
+    expect(parseAmount('1.250,50')).toBe(1250.5);
+    expect(parseAmount('1,250.50')).toBe(1250.5);
+    expect(parseAmount('2.500.000')).toBe(2500000);
+    expect(parseAmount('2,500,000')).toBe(2500000);
+    expect(parseAmount('1 250')).toBe(1250);
+    expect(parseAmount('12.')).toBe(12);
+    expect(parseAmount(',5')).toBe(0.5);
+    expect(parseAmount('1.25.0')).toBeNaN();
+    expect(parseAmount('1,2,3')).toBeNaN();
   });
 });
 
