@@ -33,3 +33,4 @@ Thumbs.db
 mobile/dist-ios/
 mobile/dist/
 mobile/.expo/
+.wrangler/
