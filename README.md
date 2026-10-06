@@ -139,10 +139,11 @@ CI (GitHub Actions) runs all four on every pull request, the contract and end-to
 
 ## Run it locally
 
-You need **Java 21**, **Node 22** and **PostgreSQL** (Docker is the easiest way to get it).
+You need **Java 21**, **Node 22** and **PostgreSQL** (Docker is the easiest way to get it). The same commands work
+in bash, PowerShell and cmd.
 
 ```bash
-cp .env.example .env     # database, JWT secret, optional Anthropic API key
+cp .env.example .env     # (Windows cmd: copy .env.example .env) database, JWT secret, optional Anthropic API key
 npm run db:up            # PostgreSQL 17 in Docker (or point DB_URL at your own)
 npm install
 npm run dev              # API on :4000 (Spring Boot), web on :5173 — sign up, then "Load a year of demo data"
@@ -164,11 +165,27 @@ use `TEST_DB_URL=jdbc:postgresql://localhost:5432/postgres` for the backend test
 
 ## Deploying
 
+### DigitalOcean App Platform
+
+`.do/app.yaml` describes the whole app: the web app at `/`, the API at `/api` (built from `backend/Dockerfile`) and a
+managed PostgreSQL database, all on one domain and redeployed on every push to `main`.
+
+1. In DigitalOcean, **Apps → Create App → Import from app spec**, and upload `.do/app.yaml` (or run
+   `doctl apps create --spec .do/app.yaml`). Allow DigitalOcean to access the GitHub repository when asked.
+2. Under the **api** component's environment variables, set `JWT_SECRET` to a random string of at least 32
+   characters (and `ANTHROPIC_API_KEY` to enable the AI coach). The database variables are already wired up.
+3. Deploy. To use your own domain, add it under **Settings → Domains**; HTTPS is set up automatically.
+
+The API needs 1 GB of memory; the spec uses the smallest instance that has it, plus a dev database — roughly
+$12 + $7 a month. For backups and failover, point the spec at a managed production cluster instead.
+
+### Anywhere else
+
 ```bash
 docker compose --profile full up --build    # PostgreSQL + the API, with JWT_SECRET from .env
 ```
 
-Or build the jar yourself (`cd backend && ./gradlew bootJar`) and run it with `SPRING_PROFILES_ACTIVE=prod`,
+Or build the jar yourself (`npm run build`) and run it with `SPRING_PROFILES_ACTIVE=prod`,
 `DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 characters — in production the API refuses to
 start without one. `/actuator/health` (with liveness and readiness probes) is there for load balancers. Serve the web
 app's static build (`npm run build -w web`) from any CDN or web server, with `/api` proxied to the backend.
@@ -179,8 +196,8 @@ Earlier versions of Fintrack stored everything in a SQLite file (`server/data/fi
 PostgreSQL database once:
 
 ```bash
-cd backend && ./gradlew bootJar
-java -jar build/libs/fintrack-backend-1.0.0.jar --import-sqlite=/path/to/finance.db
+npm run build            # builds the web app and backend/build/libs/fintrack-backend-1.0.0.jar
+java -jar backend/build/libs/fintrack-backend-1.0.0.jar --import-sqlite=/path/to/finance.db
 ```
 
 Everyone keeps their account, password and history: ids, balances, family sharing, goals, AI reports and cached
