@@ -239,11 +239,12 @@ repository, and set:
 |---|---|
 | Production branch | `main` |
 | Root directory | *(leave empty: the repository root)* |
-| Build command | `npm ci -w web && npm run build -w web` |
+| Build command | `npm ci -w web --include=dev && npm run build -w web` |
 | Build output directory | `web/dist` |
 | Environment variables | `API_ORIGIN` = your Heroku Web URL · `NODE_VERSION` = `22` · `SKIP_DEPENDENCY_INSTALL` = `1` |
 
-Pages builds and publishes on every push, at `https://<project>.pages.dev` (add your own domain under **Custom
+Pages builds with `NODE_ENV=production`, which would skip the build tools (TypeScript, Vite), hence `--include=dev`.
+It builds and publishes on every push, at `https://<project>.pages.dev` (add your own domain under **Custom
 domains**). `functions/api/[[path]].js` forwards every `/api` request to `API_ORIGIN`, so the web app and the API
 share one address, and client-side routes like `/goals` load the app.
 
