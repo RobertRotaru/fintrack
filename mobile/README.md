@@ -10,8 +10,9 @@ React Native.
 - **Same design.** The web app's tokens, colour for colour (warm ivory and forest green in light; blue-black with
   emerald and mint in dark), Newsreader for headlines, Inter for figures and interface text, and the same SVG
   landscapes. Change figures carry the same small sparkline ("↓ 17% vs. this point last month").
-- **Numbers first.** Home opens on net worth with its chart, then this month's spending, saving and investing; the
-  mood line and its landscape come after the numbers.
+- **Numbers first.** Home opens on one hero card: net worth, its trend and chart at the top, and the mood line
+  ("You're in a good place.") over the landscape that closes the same card. This month's spending, saving and
+  investing follow right below.
 - **Built for a phone.** Five tabs, each a group of features switched with a control at the top:
   - **Home**
   - **Money**: Accounts · Activity · Spending · Family
