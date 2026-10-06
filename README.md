@@ -185,7 +185,7 @@ Fintrack runs for free on what the [GitHub Student Developer Pack](https://educa
 |---|---|---|
 | API (`backend/Dockerfile`) | **Heroku**, one Basic dyno (always on, 512 MB) | $7/month |
 | PostgreSQL | **Heroku Postgres** Essential-0 (1 GB) | $5/month |
-| Web app | **Cloudflare Pages**, which also forwards `/api` to Heroku | free |
+| Web app | **Cloudflare Workers** (static assets), which also forwards `/api` to Heroku | free |
 | Profile photos | **Cloudflare R2** ([Profile photos](#profile-photos)) | free up to 10 GB |
 
 The Pack's Heroku offer is **$13 of credit a month for 24 months**, which covers the $12, so it costs nothing for two
@@ -230,25 +230,31 @@ The API uses about 250 MB at its peak, well within the dyno's 512 MB, once its m
 
 Your API's address is the **Web URL** that `heroku info` shows, e.g. `https://fintrack-yourname-1a2b3c.herokuapp.com`.
 
-#### 2. The web app on Cloudflare Pages
+#### 2. The web app on Cloudflare Workers
 
-In the Cloudflare dashboard (the same account as R2): **Workers & Pages → Create → Pages → Connect to Git**, pick the
+In the Cloudflare dashboard (the same account as R2): **Workers & Pages → Create → Import a repository**, pick the
 repository, and set:
 
 | Setting | Value |
 |---|---|
-| Production branch | `main` |
+| Project name | `fintrack`: it must match `"name"` in `wrangler.jsonc` |
 | Root directory | *(leave empty: the repository root)* |
 | Build command | `npm ci -w web --include=dev && npm run build -w web` |
-| Build output directory | `web/dist` |
-| Environment variables | `API_ORIGIN` = your Heroku Web URL · `NODE_VERSION` = `22` · `SKIP_DEPENDENCY_INSTALL` = `1` |
+| Deploy command | `npx wrangler deploy` |
+| Build variables | `NODE_VERSION` = `22` |
 
-Pages builds with `NODE_ENV=production`, which would skip the build tools (TypeScript, Vite), hence `--include=dev`.
-It builds and publishes on every push, at `https://<project>.pages.dev` (add your own domain under **Custom
-domains**). `functions/api/[[path]].js` forwards every `/api` request to `API_ORIGIN`, so the web app and the API
-share one address, and client-side routes like `/goals` load the app.
+Builds run with `NODE_ENV=production`, which would skip the build tools (TypeScript, Vite), hence `--include=dev`.
 
-Finally, add that `pages.dev` address (or your domain) to the R2 bucket's CORS `AllowedOrigins`
+Then, under the Worker's **Settings → Variables and Secrets**, add `API_ORIGIN` = your Heroku Web URL (a runtime
+variable; `keep_vars` in `wrangler.jsonc` keeps it across deploys).
+
+`wrangler.jsonc` serves the built web app from `web/dist` (client-side routes like `/goals` load the app) and sends only
+`/api/*` to `worker/index.js`, which forwards it to `API_ORIGIN`, so the web app and the API share one address. Every
+push to `main` builds and deploys, at `https://fintrack.<your-subdomain>.workers.dev` (add your own domain under
+**Settings → Domains & Routes**). To try it locally: `npm run build -w web`, then
+`npx wrangler dev --var API_ORIGIN:http://localhost:4000`.
+
+Finally, add that `workers.dev` address (or your domain) to the R2 bucket's CORS `AllowedOrigins`
 ([Profile photos](#profile-photos), step 3), so browsers may upload photos. The phone app talks to the Heroku URL
 directly: [mobile/README.md](mobile/README.md).
 
@@ -295,7 +301,7 @@ change and are cached for a year.
    ```json
    [
      {
-       "AllowedOrigins": ["https://fintrack.pages.dev", "http://localhost:5173"],
+       "AllowedOrigins": ["https://fintrack.your-subdomain.workers.dev", "http://localhost:5173"],
        "AllowedMethods": ["PUT"],
        "AllowedHeaders": ["content-type", "cache-control"],
        "MaxAgeSeconds": 3600
