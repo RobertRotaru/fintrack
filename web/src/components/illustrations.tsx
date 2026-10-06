@@ -10,8 +10,10 @@ import { clsx } from './ui';
 function Tree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <rect x={-1.6} y={-6} width={3.2} height={14} rx={1.4} fill="var(--ill-tree)" opacity={0.9} />
-      <path d="M0 -44 C 10 -34 15 -18 13 -8 C 11 2 -11 2 -13 -8 C -15 -18 -10 -34 0 -44 Z" fill="var(--ill-tree)" />
+      <g className="ill-sway" style={{ animationDelay: `${-(x % 7) * 0.6}s` }}>
+        <rect x={-1.6} y={-6} width={3.2} height={14} rx={1.4} fill="var(--ill-tree)" opacity={0.9} />
+        <path d="M0 -44 C 10 -34 15 -18 13 -8 C 11 2 -11 2 -13 -8 C -15 -18 -10 -34 0 -44 Z" fill="var(--ill-tree)" />
+      </g>
     </g>
   );
 }
@@ -19,9 +21,24 @@ function Tree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
 function RoundTree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <rect x={-1.5} y={-4} width={3} height={12} rx={1.4} fill="var(--ill-tree)" opacity={0.9} />
-      <circle cx={0} cy={-14} r={13} fill="var(--ill-hill-4)" />
-      <circle cx={-6} cy={-10} r={8} fill="var(--ill-tree)" opacity={0.55} />
+      <g className="ill-sway" style={{ animationDelay: `${-(x % 5) * 0.8}s` }}>
+        <rect x={-1.5} y={-4} width={3} height={12} rx={1.4} fill="var(--ill-tree)" opacity={0.9} />
+        <circle cx={0} cy={-14} r={13} fill="var(--ill-hill-4)" />
+        <circle cx={-6} cy={-10} r={8} fill="var(--ill-tree)" opacity={0.55} />
+      </g>
+    </g>
+  );
+}
+
+function Cloud({ x, y, s = 1, slow }: { x: number; y: number; s?: number; slow?: boolean }) {
+  return (
+    <g className={clsx('ill-cloud', slow && 'ill-cloud-slow')}>
+      <g transform={`translate(${x} ${y}) scale(${s})`} fill="var(--ill-cloud)" style={{ opacity: 'var(--ill-cloud-opacity)' }}>
+        <ellipse cx={0} cy={4} rx={30} ry={7} />
+        <circle cx={-12} cy={-1} r={9} />
+        <circle cx={4} cy={-5} r={12} />
+        <circle cx={17} cy={1} r={7} />
+      </g>
     </g>
   );
 }
@@ -46,13 +63,17 @@ export function Landscape({ className }: { className?: string }) {
         </linearGradient>
       </defs>
       <rect width="640" height="300" fill={`url(#${id}-sky)`} />
-      <circle cx="470" cy="120" r="90" fill={`url(#${id}-sun)`} />
-      <circle cx="470" cy="120" r="26" fill="var(--ill-sun)" />
+      <g className="ill-sun">
+        <circle cx="470" cy="120" r="90" fill={`url(#${id}-sun)`} />
+        <circle cx="470" cy="120" r="26" fill="var(--ill-sun)" />
+      </g>
+      <Cloud x={330} y={34} s={0.9} slow />
+      <Cloud x={560} y={58} s={1.1} />
       <path d="M0 170 C 90 120 170 140 250 112 C 330 86 410 128 480 118 C 550 108 600 92 640 100 L640 300 L0 300Z" fill="var(--ill-hill-1)" />
       <path d="M0 200 C 70 168 150 176 220 160 C 300 142 360 178 450 166 C 530 156 590 138 640 146 L640 300 L0 300Z" fill="var(--ill-hill-2)" />
       <path d="M0 232 C 90 206 180 214 260 204 C 340 194 420 220 520 210 C 580 204 620 196 640 198 L640 300 L0 300Z" fill="var(--ill-hill-3)" />
       <rect y="238" width="640" height="62" fill={`url(#${id}-water)`} />
-      <path d="M180 262 h120 M360 274 h90 M80 280 h70 M500 256 h60" stroke="var(--surface)" strokeOpacity={0.5} strokeWidth={2} strokeLinecap="round" />
+      <path className="ill-shimmer" d="M180 262 h120 M360 274 h90 M80 280 h70 M500 256 h60" stroke="var(--surface)" strokeOpacity={0.5} strokeWidth={2} strokeLinecap="round" />
       <Tree x={70} y={232} s={1.1} />
       <Tree x={96} y={236} s={0.8} />
       <Tree x={540} y={212} s={1.2} />
@@ -76,7 +97,8 @@ export function PathScene({ className }: { className?: string }) {
         </linearGradient>
       </defs>
       <rect width="360" height="240" fill={`url(#${id}-sky)`} />
-      <circle cx="270" cy="62" r="22" fill="var(--ill-sun)" />
+      <circle cx="270" cy="62" r="22" fill="var(--ill-sun)" className="ill-sun" />
+      <Cloud x={190} y={40} s={0.8} />
       <path d="M0 130 C 60 96 120 110 180 90 C 240 70 300 96 360 84 L360 240 L0 240Z" fill="var(--ill-hill-1)" />
       <path d="M0 168 C 70 140 140 150 210 132 C 270 118 320 136 360 128 L360 240 L0 240Z" fill="var(--ill-hill-2)" />
       <path d="M0 206 C 80 180 160 192 240 178 C 300 168 340 176 360 172 L360 240 L0 240Z" fill="var(--ill-hill-3)" />
@@ -104,7 +126,8 @@ export function TogetherScene({ className }: { className?: string }) {
         </linearGradient>
       </defs>
       <rect width="360" height="240" fill={`url(#${id}-sky)`} />
-      <path d="M180 70 c-10 -14 -32 -8 -30 8 c2 14 30 30 30 30 s28 -16 30 -30 c2 -16 -20 -22 -30 -8z" fill="var(--peach)" opacity={0.85} />
+      <path d="M180 70 c-10 -14 -32 -8 -30 8 c2 14 30 30 30 30 s28 -16 30 -30 c2 -16 -20 -22 -30 -8z" fill="var(--peach)" opacity={0.85} className="ill-beat" />
+      <Cloud x={290} y={50} s={0.8} slow />
       <path d="M0 150 C 80 120 140 136 200 120 C 260 104 320 124 360 116 L360 240 L0 240Z" fill="var(--ill-hill-1)" />
       <path d="M0 190 C 90 160 170 176 250 160 C 300 150 340 158 360 156 L360 240 L0 240Z" fill="var(--ill-hill-2)" />
       <RoundTree x={150} y={172} s={2} />

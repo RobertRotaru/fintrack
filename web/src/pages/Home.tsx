@@ -3,16 +3,17 @@ import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { ArrowRight, ChevronRight, Database, PiggyBank, Plus, ReceiptText, TrendingUp } from 'lucide-react';
 import {
-  balanceChange, convert, financialMood, generateInsights, goalPlan, inMonth, monthKey, monthLabel, monthlyReport, pctChange, project, toISODate,
+  balanceChange, convert, financialMood, generateInsights, goalPlan, inMonth, monthKey, monthLabel, monthlyReport, netWorthSeries, pctChange, project, toISODate,
   type Account, type Insight, type Transaction,
 } from '@ft/core';
 import { api } from '../lib/api';
 import { useUser } from '../lib/auth';
-import { greeting, moneyParts, useMoney } from '../lib/format';
+import { moneyParts, useMoney } from '../lib/format';
+import { useCountUp } from '../lib/motion';
 import { Icon } from '../lib/icons';
 import { useAccounts, useApiMutation, useFlows, useGoals, useTransactions, useTxs, keys } from '../lib/queries';
 import { InstitutionLogo } from '../components/AccountCard';
-import { NetWorthChart, SERIES } from '../components/charts';
+import { NetWorthChart, SERIES, TrendSpark } from '../components/charts';
 import { Landscape } from '../components/illustrations';
 import { QuickAdd } from '../components/QuickAdd';
 import { TransactionForm, TransactionList } from '../components/Transactions';
@@ -61,9 +62,7 @@ export function Home() {
   if (!active.length) {
     return (
       <div>
-        <p className="text-ink-2">
-          {greeting()}, {firstName} 👋
-        </p>
+        <p className="text-ink-2">Nice to meet you, {firstName}.</p>
         <h1 className="mt-2 text-5xl leading-[1.05]">Welcome to Fintrack.</h1>
         <Card className="mt-10">
           <Empty icon="wallet" title="Let's set up your money" action={
@@ -106,6 +105,12 @@ export function Home() {
   const saving = balanceChange(savingAccounts, flows, since, user.baseCurrency);
   const investing = balanceChange(investAccounts, flows, since, user.baseCurrency);
   const openGoals = goals.filter((g) => !g.completedAt);
+  // The shapes behind the glance figures: this month's spending against last month's,
+  // and the last 30 days of savings and investments.
+  const spendNow = daily.flatMap((d) => (d.current === null ? [] : [d.current]));
+  const spendPrev = daily.slice(0, Math.max(spendNow.length, 2)).map((d) => d.previous);
+  const savingLine = netWorthSeries(savingAccounts, flows, user.baseCurrency, '1M').map((p) => p.value);
+  const investLine = netWorthSeries(investAccounts, flows, user.baseCurrency, '1M').map((p) => p.value);
 
   return (
     <div className="space-y-16 lg:space-y-20">
@@ -115,7 +120,9 @@ export function Home() {
         <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-[1fr_minmax(0,520px)] lg:items-start lg:gap-10 lg:p-12">
           <div className="max-w-md pt-2" data-testid="home-mood" data-tone={mood.tone}>
             <p className="text-[15px] text-ink-2">
-              {greeting()}, {firstName} <span aria-hidden="true">👋</span>
+              Welcome back, <span className="font-medium text-ink">{firstName}</span>
+              <span className="mx-2 hidden text-line-strong sm:inline" aria-hidden="true">/</span>
+              <span className="block text-muted sm:inline">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             </p>
             <h1 id="mood" className="mt-3 text-[44px] leading-[1.02] tracking-[-0.025em] sm:text-6xl">
               {mood.headline}
@@ -126,7 +133,7 @@ export function Home() {
           <div className="rounded-[26px] border border-line bg-surface/90 p-6 shadow-[var(--shadow-lg)] backdrop-blur-md sm:p-7 glow">
             <p className="eyebrow">Total net worth</p>
             <HeroAmount amount={worth.now} currency={user.baseCurrency} />
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <Trend value={worth.pct} suffix="in 30 days" />
               <span className="text-sm text-muted">
                 across {active.length} account{active.length > 1 ? 's' : ''}
@@ -145,14 +152,14 @@ export function Home() {
       {/* 2. What changed? */}
       <section aria-labelledby="glance">
         <SectionTitle title={<span id="glance">Your money at a glance.</span>} subtitle={`Spending for ${monthLabel(thisMonth, 'long')} so far; savings and investments over the last 30 days.`} />
-        <div className="grid gap-px overflow-hidden rounded-[24px] border border-line bg-line sm:grid-cols-3">
+        <div className="stagger grid gap-px overflow-hidden rounded-[24px] border border-line bg-line sm:grid-cols-3">
           <GlanceItem
             to="/spending"
             icon={<ReceiptText className="size-5" />}
             tone="var(--peach)"
             label="Spending"
             value={money(report.expense)}
-            trend={<Trend value={pace} inverse suffix="vs. last month" />}
+            trend={<TrendSpark value={pace} inverse suffix="vs. this point last month" current={spendNow} previous={spendPrev} />}
             note={`On track for about ${money(projection.currentMonth.projectedExpense, { compact: projection.currentMonth.projectedExpense >= 100000 })} by month end.`}
           />
           <GlanceItem
@@ -161,7 +168,7 @@ export function Home() {
             tone="var(--emerald)"
             label="Saving"
             value={savingAccounts.length ? money(saving.now) : '—'}
-            trend={savingAccounts.length ? <Trend value={saving.pct} suffix="in 30 days" /> : <span className="text-sm text-muted">No savings account yet</span>}
+            trend={savingAccounts.length ? <TrendSpark value={saving.pct} suffix="in 30 days" current={savingLine} /> : <span className="text-sm text-muted">No savings account yet</span>}
             note={savingAccounts.length ? `Across ${savingAccounts.length} savings account${savingAccounts.length > 1 ? 's' : ''}.` : 'Add one to watch your safety net grow.'}
           />
           <GlanceItem
@@ -170,14 +177,14 @@ export function Home() {
             tone="var(--cobalt)"
             label="Investing"
             value={investAccounts.length ? money(investing.now) : '—'}
-            trend={investAccounts.length ? <Trend value={investing.pct} suffix="in 30 days" /> : <span className="text-sm text-muted">Not investing yet</span>}
+            trend={investAccounts.length ? <TrendSpark value={investing.pct} suffix="in 30 days" current={investLine} /> : <span className="text-sm text-muted">Not investing yet</span>}
             note={investAccounts.length ? 'Investments and crypto, at today’s rates.' : 'The AI coach can tell you if you’re ready.'}
           />
         </div>
       </section>
 
       {/* 3. What should I pay attention to? */}
-      <section aria-labelledby="attention" className="grid gap-10 lg:grid-cols-[1.35fr_1fr]">
+      <section aria-labelledby="attention" className="stagger grid gap-10 lg:grid-cols-[1.35fr_1fr]">
         <div className="min-w-0">
           <SectionTitle
             title={<span id="attention">What needs your attention.</span>}
@@ -186,7 +193,7 @@ export function Home() {
             linkLabel="All insights"
           />
           {insights.length ? (
-            <ul className="space-y-3" data-testid="attention-list">
+            <ul className="stagger space-y-3" data-testid="attention-list">
               {insights.map((i) => (
                 <li key={i.id}>
                   <Observation insight={i} />
@@ -239,11 +246,11 @@ export function Home() {
       </section>
 
       {/* 4. What can I do about it? */}
-      <section aria-labelledby="next" className="grid gap-10 lg:grid-cols-[1fr_1fr]">
+      <section aria-labelledby="next" className="stagger grid gap-10 lg:grid-cols-[1fr_1fr]">
         <div className="min-w-0">
           <SectionTitle title={<span id="next">Keep moving.</span>} subtitle="Your goals, and how far you’ve come." to="/goals" linkLabel="All goals" />
           {openGoals.length ? (
-            <ul className="space-y-6">
+            <ul className="stagger space-y-6">
               {openGoals.slice(0, 3).map((g) => {
                 const plan = goalPlan(g, projection.avgMonthlyNet);
                 return (
@@ -279,7 +286,7 @@ export function Home() {
       </section>
 
       {/* Details live deeper — a short trail into them. */}
-      <section className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
+      <section className="stagger grid gap-10 lg:grid-cols-[1.4fr_1fr]">
         <div className="min-w-0">
           <SectionTitle title="Recent activity." to="/transactions" linkLabel="All activity" />
           <Card className="!p-3 sm:!p-4">
@@ -292,7 +299,7 @@ export function Home() {
         </div>
         <div className="min-w-0">
           <SectionTitle title="Accounts." to="/accounts" linkLabel="Manage" />
-          <ul className="space-y-1">
+          <ul className="stagger space-y-1">
             {active.slice(0, 5).map((a) => (
               <li key={a.id}>
                 <MiniAccount account={a} onClick={() => navigate(`/transactions?account=${a.id}`)} />
@@ -333,8 +340,8 @@ function GlanceItem({ to, icon, tone, label, value, trend, note }: { to: string;
       </div>
       <p className="mt-5 text-sm font-medium text-ink-2">{label}</p>
       <p className="figure mt-1 truncate text-[28px] leading-tight">{value}</p>
-      <div className="mt-1">{trend}</div>
-      <p className="mt-3 text-xs leading-relaxed text-muted">{note}</p>
+      <div className="mt-3">{trend}</div>
+      <p className="mt-4 text-xs leading-relaxed text-muted">{note}</p>
     </Link>
   );
 }
@@ -396,18 +403,21 @@ function MiniAccount({ account: a, onClick }: { account: Account; onClick: () =>
  * long amount still fits on a phone, with the currency de-emphasised.
  */
 function HeroAmount({ amount, currency }: { amount: number; currency: string }) {
-  const { currency: label, number, before } = moneyParts(amount, currency);
-  const cur = <span className="text-[0.4em] font-medium tracking-normal text-muted">{label}</span>;
+  const shown = useCountUp(amount);
+  const { currency: label, number: finalNumber } = moneyParts(amount, currency);
+  const { number, before } = moneyParts(shown, currency);
+  const cur = <span className="text-[0.4em] font-medium tracking-normal text-muted" aria-hidden="true">{label}</span>;
   return (
     <div className="@container">
       <p
         className="figure mt-2 flex items-baseline gap-[0.2em] whitespace-nowrap leading-none text-[clamp(2.25rem,12cqi,3.75rem)]"
-        aria-label={`${number} ${label}`}
+        aria-label={`${finalNumber} ${label}`}
         data-testid="net-worth"
       >
         {before && cur}
-        <span>{number}</span>
+        <span aria-hidden="true">{number}</span>
         {!before && cur}
+        <span className="sr-only">{`${finalNumber} ${label}`}</span>
       </p>
     </div>
   );

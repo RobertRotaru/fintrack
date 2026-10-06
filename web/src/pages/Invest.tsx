@@ -125,7 +125,7 @@ function Snapshot({ s }: { s: HabitSummary }) {
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <Card>
         <CardHeader title="Your habit snapshot" subtitle={`Last ${s.monthsAnalyzed} complete month${s.monthsAnalyzed === 1 ? '' : 's'}`} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="stagger grid grid-cols-2 gap-3">
           {stats.map((x) => (
             <div key={x.l} className="rounded-2xl bg-surface-2 p-3.5">
               <p className="text-xs text-muted">{x.l}</p>
@@ -140,7 +140,7 @@ function Snapshot({ s }: { s: HabitSummary }) {
       </Card>
       <Card>
         <CardHeader title="Where your money sits" />
-        <ul className="space-y-3">
+        <ul className="stagger space-y-3">
           {balances.map((b) => (
             <li key={b.l}>
               <div className="mb-1 flex justify-between text-sm">

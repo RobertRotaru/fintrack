@@ -63,6 +63,8 @@
   --ill-sky-1: #f7efe0;
   --ill-sky-2: #eef3e6;
   --ill-sun: #f6d48f;
+  --ill-cloud: #ffffff;
+  --ill-cloud-opacity: 0.62;
   --ill-hill-1: #cfe0c4;
   --ill-hill-2: #a9c99c;
   --ill-hill-3: #7fae78;
@@ -118,6 +120,8 @@
     --ill-sky-1: #13213a;
     --ill-sky-2: #1c2d4c;
     --ill-sun: #ffd98a;
+    --ill-cloud: #e2ecff;
+    --ill-cloud-opacity: 0.07;
     --ill-hill-1: #1d3b45;
     --ill-hill-2: #1b4a3d;
     --ill-hill-3: #17583f;
@@ -172,6 +176,8 @@
   --ill-sky-1: #13213a;
   --ill-sky-2: #1c2d4c;
   --ill-sun: #ffd98a;
+  --ill-cloud: #e2ecff;
+  --ill-cloud-opacity: 0.07;
   --ill-hill-1: #1d3b45;
   --ill-hill-2: #1b4a3d;
   --ill-hill-3: #17583f;
@@ -389,12 +395,219 @@ h2,
   animation: pulse-soft 1.4s ease-in-out infinite;
 }
 
+/*
+ * Content entrance: a page's sections (and any `.stagger` list) rise in one
+ * after another. The page wrapper itself still settles within --motion-page;
+ * only what's inside it trails behind.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter > * > *,
+.stagger > * {
+  animation: rise 560ms var(--ease-out) both;
+  animation-delay: calc(var(--rise-base, 0ms) + min(var(--i, 0), 7) * 70ms);
+}
+.stagger {
+  --rise-base: 140ms;
+}
+:is(.page-enter > * > *, .stagger > *):nth-child(2) { --i: 1; }
+:is(.page-enter > * > *, .stagger > *):nth-child(3) { --i: 2; }
+:is(.page-enter > * > *, .stagger > *):nth-child(4) { --i: 3; }
+:is(.page-enter > * > *, .stagger > *):nth-child(5) { --i: 4; }
+:is(.page-enter > * > *, .stagger > *):nth-child(6) { --i: 5; }
+:is(.page-enter > * > *, .stagger > *):nth-child(7) { --i: 6; }
+:is(.page-enter > * > *, .stagger > *):nth-child(n + 8) { --i: 7; }
+
+/*
+ * The desktop sidebar is a rail that opens on hover. Touch screens at desktop
+ * width can't hover, so there it simply stays open.
+ */
+@media (hover: none) and (min-width: 64rem) {
+  .shell {
+    padding-left: 264px;
+  }
+  .side-rail {
+    width: 264px;
+  }
+  .side-rail .side-reveal {
+    opacity: 1;
+  }
+  .side-rail .side-divider {
+    opacity: 0;
+  }
+}
+
+/* A slow, drifting wash of colour behind every page. */
+.ambient > span {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.ambient-a {
+  top: -28vmax;
+  left: 4vw;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--brand) 16%, transparent), transparent);
+  animation: ambient-a 34s ease-in-out infinite alternate;
+}
+.ambient-b {
+  bottom: -32vmax;
+  right: -12vw;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--sky) 22%, transparent), transparent);
+  animation: ambient-b 42s ease-in-out infinite alternate;
+}
+@keyframes ambient-a {
+  to {
+    transform: translate(14vw, 10vh) scale(1.12);
+  }
+}
+@keyframes ambient-b {
+  to {
+    transform: translate(-16vw, -12vh) scale(0.9);
+  }
+}
+
+/* Illustrations come alive: a breathing sun, drifting clouds, swaying trees. */
+.ill-sun,
+.ill-sway,
+.ill-beat {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.ill-sun {
+  animation: ill-breathe 7s ease-in-out infinite;
+}
+@keyframes ill-breathe {
+  50% {
+    transform: scale(1.1);
+    opacity: 0.82;
+  }
+}
+.ill-cloud {
+  animation: ill-drift 28s ease-in-out infinite alternate;
+}
+.ill-cloud-slow {
+  animation-duration: 40s;
+  animation-direction: alternate-reverse;
+}
+@keyframes ill-drift {
+  from {
+    transform: translateX(-28px);
+  }
+  to {
+    transform: translateX(28px);
+  }
+}
+.ill-shimmer {
+  animation: ill-shimmer 6s ease-in-out infinite alternate;
+}
+@keyframes ill-shimmer {
+  from {
+    transform: translateX(-12px);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(12px);
+    opacity: 1;
+  }
+}
+.ill-sway {
+  transform-origin: 50% 100%;
+  animation: ill-sway 5s ease-in-out infinite alternate;
+}
+@keyframes ill-sway {
+  from {
+    transform: rotate(-2.5deg);
+  }
+  to {
+    transform: rotate(2.5deg);
+  }
+}
+.ill-beat {
+  animation: ill-beat 3.2s ease-in-out infinite;
+}
+@keyframes ill-beat {
+  0%,
+  40%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.1);
+  }
+  26% {
+    transform: scale(1.04);
+  }
+}
+
+/* Trend sparklines draw themselves, then the latest point pulses. */
+.spark-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: spark-draw 1s var(--ease-out) 250ms both;
+}
+@keyframes spark-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+.spark-fill {
+  animation: fade-in 600ms ease-out 700ms both;
+}
+.spark-dot,
+.spark-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.spark-dot {
+  animation: spark-dot 320ms var(--ease-out) 1.1s both;
+}
+@keyframes spark-dot {
+  from {
+    transform: scale(0);
+  }
+}
+.spark-ping {
+  animation: spark-ping 2.6s ease-out 1.4s infinite;
+}
+@keyframes spark-ping {
+  from {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
+  .page-enter > * > *,
+  .stagger > *,
   .animate-pop,
   .grow-x,
   .skeleton,
-  .skeleton-in {
+  .skeleton-in,
+  .ambient > span,
+  .ill-sun,
+  .ill-cloud,
+  .ill-shimmer,
+  .ill-sway,
+  .ill-beat,
+  .spark-draw,
+  .spark-fill,
+  .spark-dot,
+  .spark-ping {
     animation: none;
   }
 }

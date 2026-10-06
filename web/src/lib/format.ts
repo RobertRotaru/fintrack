@@ -23,11 +23,6 @@ export function formatDay(date: string): string {
   return d.toLocaleDateString(undefined, { weekday: diff < 7 ? 'long' : undefined, day: 'numeric', month: 'short', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
 }
 
-export function greeting(): string {
-  const h = new Date().getHours();
-  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-}
-
 /** Readable text colour on top of an arbitrary background colour. */
 export function onColor(hex: string): string {
   const m = hex.replace('#', '');
@@ -64,11 +59,40 @@ export function resizeImage(file: File, max = 320): Promise<string> {
  * leading minus when `allowNegative`). Empty → null; anything else → NaN, so a
  * typo never silently becomes 0 on its way through JSON.
  */
+/**
+ * Reads an amount typed in either convention: "1,250.50", "1.250,50",
+ * "1 250", "2.500.000" or plain "23,40". When both separators appear, the
+ * last one is the decimal point; a separator repeated, or followed by exactly
+ * three digits after a thousands-style group, groups thousands.
+ */
 export function parseAmount(text: string, allowNegative = false): number | null {
-  const t = text.trim().replace(',', '.');
+  let t = text.trim().replace(/[\s\u00a0\u202f'’]/g, '');
   if (!t) return null;
-  const re = allowNegative ? /^-?\d+(\.\d+)?$/ : /^\d+(\.\d+)?$/;
-  return re.test(t) ? Number(t) : Number.NaN;
+  const negative = t.startsWith('-');
+  if (negative) t = t.slice(1);
+  if (!/^[\d.,]+$/.test(t) || !/\d/.test(t)) return Number.NaN;
+
+  const lastDot = t.lastIndexOf('.');
+  const lastComma = t.lastIndexOf(',');
+  let decimal: '.' | ',' | null = null;
+  if (lastDot >= 0 && lastComma >= 0) decimal = lastDot > lastComma ? '.' : ',';
+  else {
+    const sep = lastDot >= 0 ? '.' : lastComma >= 0 ? ',' : null;
+    // One separator, used once: a decimal point ("23,40", "12.5"). Used repeatedly: thousands ("2.500.000").
+    if (sep && t.split(sep).length === 2) decimal = sep;
+  }
+  const group = decimal === '.' ? ',' : decimal === ',' ? '.' : null;
+  const [int, rawFrac, ...rest] = decimal ? t.split(decimal) : [t];
+  const frac = rawFrac || undefined; // "12." is just 12
+  if (rest.length) return Number.NaN;
+  // Thousands groups must be well-formed: "1.250.000" yes, "1.25.0" no.
+  const grouped = group ? (int || '0').split(group) : decimal ? [int || '0'] : int.split(/[.,]/);
+  if (grouped.length > 1 && (!/^\d{1,3}$/.test(grouped[0]) || grouped.slice(1).some((g) => !/^\d{3}$/.test(g)))) return Number.NaN;
+  if (grouped.some((g) => !/^\d+$/.test(g)) || (frac !== undefined && !/^\d+$/.test(frac))) return Number.NaN;
+
+  const n = Number(`${grouped.join('')}${frac !== undefined ? `.${frac}` : ''}`);
+  if (negative) return allowNegative ? -n : Number.NaN;
+  return n;
 }
 
 /**

@@ -125,10 +125,10 @@ CI (GitHub Actions) runs all four on every pull request, the contract and end-to
 - **Principle:** hierarchy → narrative → data. Each page leads with one sentence and one number, explains what changed, and only then shows the detail.
 - **Type:** Newsreader, an editorial serif, for headlines; Inter for interface text and figures, with tabular numbers wherever amounts line up. Both are self-hosted variable fonts, so there are no third-party font requests.
 - **Colour:** light is warm ivory with deep forest ink, sage, emerald, peach, sky and a little cobalt; dark is deep blue-black with emerald, electric mint, cobalt, violet and warm orange. One forest/emerald accent marks primary actions, and only the most important element on a page gets a soft glow. Good and bad states always come with an arrow, icon or label, never colour alone.
-- **Illustration:** small SVG landscapes drawn with theme tokens, so the same scene is a morning in light mode and a dusk in dark mode.
-- **Motion:** a 220ms fade-and-rise between pages that animates only opacity and transform; charts mount just after it and draw themselves in, so the transition stays smooth. Everything is switched off for anyone who prefers reduced motion.
+- **Illustration:** small SVG landscapes drawn with theme tokens, so the same scene is a morning in light mode and a dusk in dark mode. They move gently: the sun breathes, clouds drift, trees sway, and a slow wash of colour drifts behind every page.
+- **Motion:** a 220ms fade-and-rise between pages that animates only opacity and transform, after which each page's sections and cards rise in one after another. Charts mount just after the transition and draw themselves in; the headline net worth counts up, and change figures carry a small sparkline (this month against the same point last month) that draws itself. Everything is switched off for anyone who prefers reduced motion.
 - **States:** page-shaped loading skeletons (shown only if loading takes over 150ms), friendly empty states, and distinct error screens for server errors, being offline, a missing page, or a page that failed to download.
-- **Responsive:** a persistent sidebar on desktop (main sections, a “More” group and Settings); multi-column layouts collapse on tablets; on phones, bottom navigation with a central add button.
+- **Responsive:** on desktop, a slim icon sidebar that opens over the page on hover or keyboard focus (main sections, a “More” group and Settings; touch screens keep it open); multi-column layouts collapse on tablets; on phones, bottom navigation with a central add button.
 
 **Data & privacy**
 

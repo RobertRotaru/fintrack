@@ -95,7 +95,7 @@ export function Accounts() {
                   <span className="text-2xl">{t.label}</span>
                   <span className="font-sans text-sm font-medium text-muted num">{money(list.reduce((s, a) => s + base(a), 0))}</span>
                 </h2>
-                <ul className="divide-y divide-line overflow-hidden rounded-[22px] border border-line bg-surface shadow-[var(--shadow)]">
+                <ul className="stagger divide-y divide-line overflow-hidden rounded-[22px] border border-line bg-surface shadow-[var(--shadow)]">
                   {list.map((a) => (
                     <li key={a.id}>
                       <AccountRow account={a} flows={flows} sharedBy={ownerName(a)} onClick={() => setEditing(a)} />

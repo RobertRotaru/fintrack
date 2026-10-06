@@ -79,7 +79,7 @@ export function Projections() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="stagger grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="!p-4">
           <p className="text-xs text-muted">Expected income / mo</p>
           <p className="figure mt-1 text-xl num">{money(nextMonth.income)}</p>

@@ -81,7 +81,7 @@ export function Insights() {
               ]}
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="stagger grid gap-3 md:grid-cols-2">
             {shown.map((i) => (
               <InsightCard key={i.id} insight={i} />
             ))}

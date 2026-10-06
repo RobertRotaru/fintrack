@@ -294,8 +294,8 @@ export function Delta({ value, inverse, className }: { value: number | null; inv
   const flat = Math.abs(value) < 0.5;
   const Arrow = value > 0 ? ArrowUp : ArrowDown;
   return (
-    <span className={clsx('inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold num', flat ? 'bg-surface-2 text-muted' : good ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad', className)}>
-      {!flat && <Arrow className="size-3" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
+    <span className={clsx('inline-flex items-baseline gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold num', flat ? 'bg-surface-2 text-muted' : good ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad', className)}>
+      {!flat && <Arrow className="size-3 shrink-0 self-center" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
       {Math.abs(Math.round(value))}%
     </span>
   );
@@ -332,8 +332,10 @@ export function Trend({ value, inverse, suffix, className }: { value: number | n
   const Arrow = value >= 0 ? ArrowUp : ArrowDown;
   const digits = Math.abs(value) < 10 ? 1 : 0;
   return (
-    <span className={clsx('inline-flex items-center gap-1 text-sm font-medium num', flat ? 'text-muted' : good ? 'text-good' : 'text-bad', className)}>
-      {!flat && <Arrow className="size-3.5" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
+    // Baseline-aligned so the figure sits on the same line as neighbouring text of any size;
+    // the arrow is centred on its own and stays out of the baseline calculation.
+    <span className={clsx('inline-flex items-baseline gap-1 text-sm font-medium num', flat ? 'text-muted' : good ? 'text-good' : 'text-bad', className)}>
+      {!flat && <Arrow className="size-[1em] shrink-0 self-center" strokeWidth={2.5} aria-label={value > 0 ? 'up' : 'down'} />}
       {Math.abs(value).toFixed(digits)}%{suffix && <span className="font-normal text-muted"> {suffix}</span>}
     </span>
   );
