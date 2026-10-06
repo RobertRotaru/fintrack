@@ -10,10 +10,17 @@ React Native.
 - **Same design.** The web app's tokens, colour for colour (warm ivory and forest green in light; blue-black with
   emerald and mint in dark), Newsreader for headlines, Inter for figures and interface text, and the same SVG
   landscapes. Change figures carry the same small sparkline ("↓ 17% vs. this point last month").
-- **Built for a phone.** Five tabs: Home · Accounts · **+** · Goals · More. The + opens Quick add as a bottom sheet
-  with its own keypad (with the decimal comma for Romanian amounts), so typing an amount never hides the categories:
-  type, tap a category, done. Spending, Reports, Insights, Projections, Invest, Family and Settings live under More,
-  alongside your profile.
+- **Numbers first.** Home opens on net worth with its chart, then this month's spending, saving and investing; the
+  mood line and its landscape come after the numbers.
+- **Built for a phone.** Five tabs, each a group of features switched with a control at the top:
+  - **Home**
+  - **Money**: Accounts · Activity · Spending · Family
+  - **+**: Quick add, a bottom sheet with its own keypad (with the decimal comma for Romanian amounts), so typing an
+    amount never hides the categories: type, tap a category, done
+  - **Plan**: Goals · Projections · Invest
+  - **Insights**: For you · Reports
+
+  Your profile and settings sit apart from the features, behind your photo at the top of Home.
 - **Native touches.** Face ID / fingerprint sign-in and app lock, haptics on save, pull to refresh, system dark mode,
   and photo picking from the camera or library.
 - **Same backend.** The Spring Boot API and its JWT sessions, unchanged. Profile photos use the same presigned
@@ -21,7 +28,7 @@ React Native.
 
 ## Mock screens
 
-Home · Quick add · Spending · Accounts · Goals · Profile & More · Sign in · Home in dark mode.
+Home · Quick add · Money › Accounts · Money › Spending · Plan › Goals · Insights · Profile & settings · Sign in · Home in dark mode.
 
 ## Planned stack
 
