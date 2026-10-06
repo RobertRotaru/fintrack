@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Archive, ArchiveRestore, Check, LogOut, Monitor, Moon, Plus, Sun } from 'lucide-react';
+import { Link } from 'react-router';
+import { Archive, ArchiveRestore, Check, ChevronRight, Monitor, Moon, Plus, Sun } from 'lucide-react';
 import { COUNTRIES, CURRENCIES, PERSONAL_COLORS, convert, type Category, type TxKind, type User } from '@ft/core';
 import { api } from '../lib/api';
 import { useAuth, useUser } from '../lib/auth';
@@ -26,20 +27,25 @@ import { ErrorState, Skeleton } from '../components/states';
 
 export function Settings() {
   const user = useUser();
-  const { setUser, logout } = useAuth();
-  const [profile, setProfile] = useState({ name: user.name, country: user.country, baseCurrency: user.baseCurrency });
+  const { setUser } = useAuth();
+  const [profile, setProfile] = useState({ country: user.country, baseCurrency: user.baseCurrency });
   const save = useApiMutation((body: typeof profile) => api<User>('/auth/me', { method: 'PATCH', body }), [keys.transactions]);
-  const dirty = profile.name !== user.name || profile.country !== user.country || profile.baseCurrency !== user.baseCurrency;
+  const dirty = profile.country !== user.country || profile.baseCurrency !== user.baseCurrency;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" />
+      <PageHeader
+        title="Settings"
+        subtitle="How Fintrack works for you."
+        action={
+          <Link to="/profile" className="group inline-flex items-center gap-1 text-sm font-medium text-brand-fg hover:underline underline-offset-4">
+            Edit your profile <ChevronRight className="size-4 transition group-hover:translate-x-0.5" />
+          </Link>
+        }
+      />
       <Card>
-        <CardHeader title="Profile" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Name">
-            <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
-          </Field>
+        <CardHeader title="Preferences" />
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Country" hint="Default for new accounts and bank lists">
             <Select value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value })}>
               {COUNTRIES.map((c) => (
@@ -57,17 +63,14 @@ export function Settings() {
             </Select>
           </Field>
         </div>
-        <div className="mt-4 flex justify-between">
-          <Button variant="ghost" className="text-bad" onClick={logout}>
-            <LogOut className="size-4" /> Sign out
-          </Button>
+        <div className="mt-4 flex justify-end">
           <Button
             disabled={!dirty}
             loading={save.isPending}
             onClick={async () => {
               try {
                 setUser(await save.mutateAsync(profile));
-                toast.success('Profile saved');
+                toast.success('Preferences saved');
               } catch {
                 // The global mutation error handler already showed a toast.
               }

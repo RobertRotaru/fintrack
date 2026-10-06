@@ -40,3 +40,8 @@ fintrack:
     enabled: ${FX_ENABLED:true}
   ai:
     model: ${ANTHROPIC_MODEL:claude-opus-5-5}
+  storage:
+    # Profile photos go to object storage, never the database. "local" is a stand-in bucket on disk with
+    # the same presigned-upload flow as S3 / Cloudflare R2 / DigitalOcean Spaces (see README → Profile photos).
+    driver: ${STORAGE_DRIVER:local}
+    local-dir: ${STORAGE_DIR:.data/uploads}

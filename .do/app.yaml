@@ -45,6 +45,8 @@ services:
       - key: ANTHROPIC_API_KEY
         scope: RUN_TIME
         type: SECRET
+      # Profile photos default to a bucket on local disk, which App Platform wipes on every deploy.
+      # Fine for a demo; for real use, point this at Cloudflare R2 or Spaces (README → Profile photos).
 
 static_sites:
   - name: web

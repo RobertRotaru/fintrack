@@ -20,7 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class SecurityConfig {
     /** Everything under these needs a session; health, FX, sign-up and sign-in are public. */
     static final String[] PROTECTED = {
-        "/api/auth/me", "/api/accounts/**", "/api/categories/**", "/api/transactions/**", "/api/transfers/**",
+        "/api/auth/me", "/api/me/**", "/api/accounts/**", "/api/categories/**", "/api/transactions/**", "/api/transfers/**",
         "/api/goals/**", "/api/household/**", "/api/ai/**", "/api/demo/**",
     };
 

@@ -157,8 +157,8 @@ function FamilyHome({ household }: { household: Household }) {
 
       <section aria-label="Members" className="flex flex-wrap items-start gap-6 sm:gap-8">
         {household.members.map((m) => (
-          <div key={m.userId} className="group relative flex w-20 flex-col items-center text-center" data-testid="member">
-            <Avatar name={m.name} size={64} ring />
+          <div key={m.userId} className="group relative flex w-20 flex-col items-center text-center" data-testid="member" title={m.bio || undefined}>
+            <Avatar name={m.name} src={m.avatarUrl} size={64} ring />
             <p className="mt-2 w-full truncate text-sm font-semibold">{m.userId === user.id ? 'You' : m.name.split(' ')[0]}</p>
             <p className="flex items-center gap-1 text-xs text-muted">
               {m.role === 'owner' ? (

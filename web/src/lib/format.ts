@@ -55,15 +55,12 @@ export function resizeImage(file: File, max = 320): Promise<string> {
 }
 
 /**
- * Strict amount parsing for form fields: accepts "12", "12.5" or "12,5" (and a
- * leading minus when `allowNegative`). Empty → null; anything else → NaN, so a
- * typo never silently becomes 0 on its way through JSON.
- */
-/**
- * Reads an amount typed in either convention: "1,250.50", "1.250,50",
- * "1 250", "2.500.000" or plain "23,40". When both separators appear, the
- * last one is the decimal point; a separator repeated, or followed by exactly
- * three digits after a thousands-style group, groups thousands.
+ * Strict amount parsing for form fields, in either convention: "1,250.50",
+ * "1.250,50", "1 250", "2.500.000" or plain "23,40". With both separators the
+ * last one is the decimal point; one separator used once is a decimal point,
+ * used repeatedly it groups thousands. A leading minus only when
+ * `allowNegative`. Empty → null; anything else → NaN, so a typo never
+ * silently becomes 0 on its way through JSON.
  */
 export function parseAmount(text: string, allowNegative = false): number | null {
   let t = text.trim().replace(/[\s\u00a0\u202f'’]/g, '');

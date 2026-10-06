@@ -2,6 +2,7 @@ package com.fintrack.data;
 
 import com.fintrack.money.Money;
 import com.fintrack.reference.ReferenceData;
+import com.fintrack.storage.ObjectStorage;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,8 +40,10 @@ public class Visibility {
 
     private final JdbcClient db;
     private final ReferenceData ref;
+    private final ObjectStorage storage;
 
-    public Visibility(JdbcClient db, ReferenceData ref) {
+    public Visibility(JdbcClient db, ReferenceData ref, ObjectStorage storage) {
+        this.storage = storage;
         this.db = db;
         this.ref = ref;
     }
@@ -61,8 +64,10 @@ public class Visibility {
         return rs.getObject(col, UUID.class);
     }
 
-    public static Views.User user(ResultSet rs) throws SQLException {
-        return new Views.User(uuid(rs, "id"), rs.getString("email"), rs.getString("name"), rs.getString("base_currency"), rs.getString("country"), ts(rs, "created_at"));
+    public Views.User user(ResultSet rs) throws SQLException {
+        String avatar = rs.getString("avatar_key");
+        return new Views.User(uuid(rs, "id"), rs.getString("email"), rs.getString("name"), rs.getString("base_currency"), rs.getString("country"), ts(rs, "created_at"),
+                rs.getString("bio"), avatar == null ? null : storage.publicUrl(avatar));
     }
 
     public static Views.Category category(ResultSet rs) throws SQLException {
@@ -183,10 +188,14 @@ public class Visibility {
         UUID hh = householdIdOf(me);
         if (hh == null) return Optional.empty();
         List<Views.Member> members = db.sql("""
-                SELECT m.user_id, m.role, m.joined_at, u.name, u.email FROM household_members m JOIN users u ON u.id = m.user_id
+                SELECT m.user_id, m.role, m.joined_at, u.name, u.email, u.bio, u.avatar_key FROM household_members m JOIN users u ON u.id = m.user_id
                 WHERE m.household_id = ? ORDER BY m.joined_at""")
                 .param(hh)
-                .query((rs, i) -> new Views.Member(uuid(rs, "user_id"), rs.getString("name"), rs.getString("email"), rs.getString("role"), ts(rs, "joined_at")))
+                .query((rs, i) -> {
+                    String avatar = rs.getString("avatar_key");
+                    return new Views.Member(uuid(rs, "user_id"), rs.getString("name"), rs.getString("email"), rs.getString("role"), ts(rs, "joined_at"),
+                            rs.getString("bio"), avatar == null ? null : storage.publicUrl(avatar));
+                })
                 .list();
         return db.sql("SELECT * FROM households WHERE id = ?").param(hh)
                 .query((rs, i) -> new Views.Household(uuid(rs, "id"), rs.getString("name"), rs.getString("invite_code"), uuid(rs, "created_by"),

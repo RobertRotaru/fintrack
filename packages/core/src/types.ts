@@ -8,6 +8,10 @@ export interface User {
   baseCurrency: string;
   country: string;
   createdAt: string;
+  /** A line or two about yourself, shown on your profile. */
+  bio?: string;
+  /** Profile photo in object storage; null when there's none. */
+  avatarUrl?: string | null;
 }
 
 export interface Account {
@@ -106,6 +110,8 @@ export interface HouseholdMember {
   email: string;
   role: 'owner' | 'member';
   joinedAt: string;
+  bio?: string;
+  avatarUrl?: string | null;
 }
 
 export interface Household {

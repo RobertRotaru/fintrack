@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import {
-  ArrowLeftRight, BarChart3, Goal, Home, Lightbulb, LogOut, Menu, Moon, PieChart, Plus, Settings, Sparkles, Sun, TrendingUp, Users, Wallet, type LucideIcon,
+  ArrowLeftRight, BarChart3, Goal, Home, Lightbulb, LogOut, Menu, Moon, PieChart, Plus, Settings, Sparkles, Sun, TrendingUp, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -27,6 +27,7 @@ const MORE: NavItem[] = [
   { to: '/invest', label: 'Invest', icon: Sparkles },
 ];
 const SETTINGS: NavItem = { to: '/settings', label: 'Settings', icon: Settings };
+const PROFILE: NavItem = { to: '/profile', label: 'Profile', icon: UserRound };
 const MOBILE_NAV = [NAV[0], NAV[1], NAV[3], NAV[5]];
 
 /** The brand mark: a rising line inside a soft leaf-green tile. */
@@ -41,7 +42,7 @@ export function BrandMark({ className }: { className?: string }) {
 }
 
 /** Text in the sidebar that only shows once the rail is expanded. */
-const REVEAL = 'side-reveal whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/side:opacity-100 group-hover/side:delay-75 group-focus-within/side:opacity-100';
+const REVEAL = 'whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/side:opacity-100 group-hover/side:delay-75 group-has-[:focus-visible]/side:opacity-100';
 
 function SideLink({ to, label, icon: I, end }: NavItem) {
   return (
@@ -97,15 +98,15 @@ export function Layout() {
   const ThemeIcon = theme === 'dark' ? Sun : Moon;
 
   return (
-    <div className="shell relative isolate min-h-screen lg:pl-[76px]">
+    <div className="relative isolate min-h-screen lg:pl-[76px]">
       {/* Slow-moving colour behind every page. */}
       <div aria-hidden="true" className="ambient pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <span className="ambient-a" />
         <span className="ambient-b" />
       </div>
 
-      {/* Desktop sidebar: an icon rail that opens over the page on hover (or keyboard focus). */}
-      <aside className="side-rail group/side hidden lg:flex fixed inset-y-0 left-0 z-40 w-[76px] flex-col overflow-hidden border-r border-line bg-sidebar/85 backdrop-blur-xl px-3 py-7 transition-[width,box-shadow] duration-300 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:w-[264px] hover:delay-75 hover:shadow-[var(--shadow-lg)] focus-within:w-[264px] focus-within:shadow-[var(--shadow-lg)]">
+      {/* Desktop sidebar: an icon rail that opens over the page only while hovered (or while tabbing through it with the keyboard). */}
+      <aside className="group/side hidden lg:flex fixed inset-y-0 left-0 z-40 w-[76px] flex-col overflow-hidden border-r border-line bg-sidebar/85 backdrop-blur-xl px-3 py-7 transition-[width,box-shadow] duration-300 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:w-[264px] hover:delay-75 hover:shadow-[var(--shadow-lg)] has-[:focus-visible]:w-[264px] has-[:focus-visible]:shadow-[var(--shadow-lg)]">
         <div className="mb-9 flex items-center gap-2.5 px-[10px]">
           <BrandMark className="size-8 shrink-0" />
           <span className={clsx('font-display text-[26px] leading-none tracking-[-0.02em]', REVEAL)}>Fintrack</span>
@@ -125,7 +126,7 @@ export function Layout() {
           ))}
         </nav>
         <div className="relative mb-2 mt-7 h-4 px-[17px]">
-          <span className="side-divider absolute left-[17px] top-1/2 h-px w-[18px] bg-line-strong transition-opacity duration-200 group-hover/side:opacity-0 group-focus-within/side:opacity-0" aria-hidden="true" />
+          <span className="absolute left-[17px] top-1/2 h-px w-[18px] bg-line-strong transition-opacity duration-200 group-hover/side:opacity-0 group-has-[:focus-visible]/side:opacity-0" aria-hidden="true" />
           <p className={clsx('eyebrow', REVEAL)}>More</p>
         </div>
         <nav aria-label="More" className="flex flex-col gap-0.5">
@@ -135,10 +136,10 @@ export function Layout() {
         </nav>
         <div className="mt-auto space-y-3">
           <SideLink {...SETTINGS} />
-          <div className="flex w-[240px] shrink-0 items-center gap-2 rounded-2xl border border-transparent p-1 transition-colors duration-200 group-hover/side:border-line group-hover/side:bg-surface/70 group-focus-within/side:border-line group-focus-within/side:bg-surface/70">
-            <NavLink to="/settings" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 hover:bg-surface-2">
+          <div className="flex w-[240px] shrink-0 items-center gap-2 rounded-2xl border border-transparent p-1 transition-colors duration-200 group-hover/side:border-line group-hover/side:bg-surface/70 group-has-[:focus-visible]/side:border-line group-has-[:focus-visible]/side:bg-surface/70">
+            <NavLink to="/profile" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 hover:bg-surface-2">
               <span className="shrink-0">
-                <Avatar name={user?.name ?? '?'} size={34} />
+                <Avatar name={user?.name ?? '?'} src={user?.avatarUrl} size={34} />
               </span>
               <div className={clsx('min-w-0', REVEAL)}>
                 <p className="truncate text-sm font-semibold">{user?.name}</p>
@@ -202,7 +203,7 @@ export function Layout() {
 
       <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <div className="grid grid-cols-3 gap-2">
-          {[...NAV, ...MORE, SETTINGS].map(({ to, label, icon: I, end }) => (
+          {[...NAV, ...MORE, PROFILE, SETTINGS].map(({ to, label, icon: I, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -230,7 +231,7 @@ export function Layout() {
 function skeletonFor(path: string): SkeletonVariant {
   if (path === '/') return 'dashboard';
   if (path === '/transactions') return 'list';
-  if (path === '/goals' || path === '/accounts' || path === '/family') return 'cards';
+  if (path === '/goals' || path === '/accounts' || path === '/family' || path === '/profile' || path === '/settings') return 'cards';
   return 'charts';
 }
 

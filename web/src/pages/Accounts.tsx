@@ -9,7 +9,7 @@ import { Icon } from '../lib/icons';
 import { keys, useAccounts, useApiMutation, useFlows, useHousehold } from '../lib/queries';
 import { AccountCard, InstitutionLogo } from '../components/AccountCard';
 import { AccountForm } from '../components/AccountForm';
-import { Sparkline } from '../components/charts';
+import { Sparkline, TrendSpark } from '../components/charts';
 import { Sprout } from '../components/illustrations';
 import { Button, Card, Empty, Modal, PageHeader, Trend, clsx } from '../components/ui';
 import { loadGate } from '../components/states';
@@ -40,6 +40,7 @@ export function Accounts() {
   const ownerName = (a: Account) => (a.ownerId === user.id ? null : (household?.members.find((m) => m.userId === a.ownerId)?.name.split(' ')[0] ?? 'Family'));
   const monthAgo = toISODate(new Date(Date.now() - 30 * 86_400_000));
   const total = balanceChange(active, flows, monthAgo, user.baseCurrency);
+  const totalLine = netWorthSeries(active, flows, user.baseCurrency, '1M').map((p) => p.value);
 
   return (
     <div>
@@ -61,7 +62,7 @@ export function Accounts() {
               {money(assets + debts)}
             </p>
             <div className="mt-3">
-              <Trend value={total.pct} suffix="in the last 30 days" />
+              <TrendSpark value={total.pct} suffix="in the last 30 days" current={totalLine} width={96} height={36} />
             </div>
           </div>
           <dl className="flex gap-10 pb-1">

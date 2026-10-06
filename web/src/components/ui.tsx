@@ -362,7 +362,19 @@ export function SectionTitle({ title, subtitle, to, linkLabel = 'See all', actio
 const AVATAR_TONES = ['var(--emerald)', 'var(--peach)', 'var(--cobalt)', 'var(--violet)', 'var(--sky)', 'var(--sun)'];
 
 /** Initials on a warm tone picked from the name, so the same person always gets the same colour. */
-export function Avatar({ name, size = 40, ring }: { name: string; size?: number; ring?: boolean }) {
+export function Avatar({ name, size = 40, ring, src }: { name: string; size?: number; ring?: boolean; src?: string | null }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        className={clsx('inline-block shrink-0 rounded-full object-cover bg-surface-2', ring && 'ring-4 ring-surface')}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';
   const tone = AVATAR_TONES[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % AVATAR_TONES.length];
   return (

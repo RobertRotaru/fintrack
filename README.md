@@ -128,7 +128,7 @@ CI (GitHub Actions) runs all four on every pull request, the contract and end-to
 - **Illustration:** small SVG landscapes drawn with theme tokens, so the same scene is a morning in light mode and a dusk in dark mode. They move gently: the sun breathes, clouds drift, trees sway, and a slow wash of colour drifts behind every page.
 - **Motion:** a 220ms fade-and-rise between pages that animates only opacity and transform, after which each page's sections and cards rise in one after another. Charts mount just after the transition and draw themselves in; the headline net worth counts up, and change figures carry a small sparkline (this month against the same point last month) that draws itself. Everything is switched off for anyone who prefers reduced motion.
 - **States:** page-shaped loading skeletons (shown only if loading takes over 150ms), friendly empty states, and distinct error screens for server errors, being offline, a missing page, or a page that failed to download.
-- **Responsive:** on desktop, a slim icon sidebar that opens over the page on hover or keyboard focus (main sections, a “More” group and Settings; touch screens keep it open); multi-column layouts collapse on tablets; on phones, bottom navigation with a central add button.
+- **Responsive:** on desktop, a slim icon sidebar that opens over the page only while hovered, or while tabbing through it with the keyboard (main sections, a “More” group, Settings and your profile); multi-column layouts collapse on tablets; on phones, bottom navigation with a central add button.
 
 **Data & privacy**
 
@@ -190,6 +190,40 @@ Or build the jar yourself (`npm run build`) and run it with `SPRING_PROFILES_ACT
 start without one. `/actuator/health` (with liveness and readiness probes) is there for load balancers. Serve the web
 app's static build (`npm run build -w web`) from any CDN or web server, with `/api` proxied to the backend.
 
+### Profile photos
+
+Photos never go into PostgreSQL: they'd bloat every backup and every query that reads a user. The API stores only
+an object **key**; the file lives in object storage and is uploaded straight from the browser:
+
+1. `POST /api/me/avatar/uploads` → the API returns a new key and a presigned `PUT` link, valid for 5 minutes,
+   locked to one content type and 2 MB.
+2. The browser crops the photo to a 512px square (WebP, usually 10–40 KB) and `PUT`s it to that link: no session
+   token, the signature is the permission.
+3. `PUT /api/me/avatar {key}` → the profile points at the new key; the old photo is deleted.
+
+Keys are random and change on every upload, so photos are served with a one-year immutable cache.
+
+Everything goes through one small interface, `ObjectStorage` (`presignPut`, `publicUrl`, `exists`, `delete`). Today
+there's one implementation, **`local`**: a stand-in bucket on disk (`STORAGE_DIR`, git-ignored `.data/`) that the
+API itself serves at `/api/storage/…`, with HMAC-signed links that behave like S3's. That's for development and
+demos only: App Platform's disk is wiped on every deploy.
+
+Cheap places to put the real thing, roughly in order of preference (prices change, so check before choosing):
+
+| Option | Cost for a small app | Notes |
+|---|---|---|
+| **Cloudflare R2** | Free up to 10 GB stored, 1M uploads and 10M reads a month; no bandwidth fees | S3 API, so presigned uploads work as-is. Public bucket or custom domain for reads. **Recommended.** |
+| **DigitalOcean Spaces** | $5/month flat (250 GB, 1 TB transfer, built-in CDN) | Same bill and dashboard as the app; the Student Pack credit covers it. S3 API. |
+| **Backblaze B2** | First 10 GB free, then about $7/TB a month | S3 API; free egress through Cloudflare. A bit more setup. |
+| **Supabase / Firebase Storage** | Free tiers (1–5 GB) | Adds a second platform and SDK; signed uploads are supported. |
+| **Cloudinary / ImageKit** | Free tiers (~25 GB) | On-the-fly resizing and formats, but vendor-specific URLs. |
+| **A disk on the server** | DO Volume $1 per 10 GB on a Droplet | No extra service, but ties photos to one machine and doesn't work on App Platform. |
+
+Switching to R2 or Spaces means adding `software.amazon.awssdk:s3` and an `S3ObjectStorage` (its presigner gives
+`presignPut`; `publicUrl` is the bucket's public URL plus the key), selected with `STORAGE_DRIVER=s3` plus the
+endpoint, bucket and keys. Then allow `PUT` from the app's origin in the bucket's CORS settings. Nothing in the
+web app or the database changes.
+
 ### Moving over from the SQLite version
 
 Earlier versions of Fintrack stored everything in a SQLite file (`server/data/finance.db`). Import it into an empty
@@ -217,7 +251,7 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 
 | Area | Endpoints |
 |---|---|
-| Auth & profile | `POST /auth/register` · `POST /auth/login` · `GET/PATCH /auth/me` |
+| Auth & profile | `POST /auth/register` · `POST /auth/login` · `GET/PATCH /auth/me` (name, bio, country, currency) · `POST /me/avatar/uploads` · `PUT/DELETE /me/avatar` |
 | Money | `/accounts` · `/categories` · `/transactions` · `/transfers` (CRUD) |
 | Goals | `/goals` (CRUD) · `POST /goals/:id/contributions` |
 | Family | `GET/POST/PATCH /household` · `POST /household/join` · `/leave` · `/invite-code` · `DELETE /household/members/:id` |
@@ -230,3 +264,5 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 - [ ] Bank sync via open banking (PSD2)
 - [ ] AI buying suggestions once a goal is reached
 - [ ] Push notifications for insights and goal milestones
+- [ ] Profile photos on Cloudflare R2 (an `S3ObjectStorage` behind the existing `ObjectStorage` interface)
+- [ ] Move account and goal pictures out of the database into the same storage

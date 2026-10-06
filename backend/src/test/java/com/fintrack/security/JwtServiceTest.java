@@ -12,7 +12,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 class JwtServiceTest {
     private static AppProperties props(String secret, Duration ttl) {
-        return new AppProperties(secret, ttl, List.of(), new AppProperties.Fx(false), new AppProperties.Ai("m"));
+        return new AppProperties(secret, ttl, List.of(), new AppProperties.Fx(false), new AppProperties.Ai("m"), new AppProperties.Storage("local", ".data/uploads"));
     }
 
     @Test

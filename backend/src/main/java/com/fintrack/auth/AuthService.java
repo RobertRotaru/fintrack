@@ -69,8 +69,9 @@ public class AuthService {
 
     /** All-or-nothing: fields are validated before this runs; null means "leave as is". */
     @Transactional
-    public Views.User update(UUID me, String name, String country, String currency) {
+    public Views.User update(UUID me, String name, String bio, String country, String currency) {
         if (name != null) db.sql("UPDATE users SET name = ? WHERE id = ?").params(name, me).update();
+        if (bio != null) db.sql("UPDATE users SET bio = ? WHERE id = ?").params(bio, me).update();
         if (country != null) db.sql("UPDATE users SET country = ? WHERE id = ?").params(country, me).update();
         if (currency != null) db.sql("UPDATE users SET base_currency = ? WHERE id = ?").params(currency, me).update();
         return view.user(me).orElseThrow();
