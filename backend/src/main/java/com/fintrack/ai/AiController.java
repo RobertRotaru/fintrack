@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,14 +32,16 @@ public class AiController {
     private final FxService fx;
     private final InvestmentCoach coach;
     private final JsonMapper mapper;
+    private final AiJobs jobs;
 
-    public AiController(JdbcClient db, Visibility view, ReferenceData ref, FxService fx, InvestmentCoach coach, JsonMapper mapper) {
+    public AiController(JdbcClient db, Visibility view, ReferenceData ref, FxService fx, InvestmentCoach coach, JsonMapper mapper, AiJobs jobs) {
         this.db = db;
         this.view = view;
         this.ref = ref;
         this.fx = fx;
         this.coach = coach;
         this.mapper = mapper;
+        this.jobs = jobs;
     }
 
     HabitSummary.Summary summaryFor(UUID me) {
@@ -54,39 +58,48 @@ public class AiController {
         return HabitSummary.compute(txs, accounts, goals, base, LocalDate.now(), ref::isDiscretionary, fx::convert);
     }
 
-    private Map<String, Object> response(boolean configured, HabitSummary.Summary summary, JsonNode advice) {
+    /** The habit snapshot, the latest analysis, and the analysis in progress (or the one that just failed), if any. */
+    private Map<String, Object> state(UUID me, HabitSummary.Summary summary) {
+        JsonNode advice = db.sql("SELECT payload::text FROM ai_reports WHERE user_id = ? AND kind = 'investment' ORDER BY created_at DESC LIMIT 1")
+                .param(me).query(String.class).optional().map(mapper::readTree).orElse(null);
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("configured", configured);
+        out.put("configured", coach.configured());
         out.put("summary", summary);
         out.put("advice", advice);
+        out.put("job", AiJobs.json(jobs.state(me, "investment")));
         return out;
     }
 
     @GetMapping("/investment")
     public Map<String, Object> latest(@AuthenticationPrincipal UUID me) {
-        JsonNode advice = db.sql("SELECT payload::text FROM ai_reports WHERE user_id = ? AND kind = 'investment' ORDER BY created_at DESC LIMIT 1")
-                .param(me).query(String.class).optional().map(mapper::readTree).orElse(null);
-        return response(coach.configured(), summaryFor(me), advice);
+        return state(me, summaryFor(me));
     }
 
+    /**
+     * Starts an analysis in the background and answers at once (202) with {@code job.status = "running"}; the app polls
+     * GET until the job is gone (the new advice is there) or has failed (its error says why). Asking again while one is
+     * running doesn't start a second.
+     */
     @PostMapping("/investment")
-    public Map<String, Object> analyse(@AuthenticationPrincipal UUID me) {
+    public ResponseEntity<Map<String, Object>> analyse(@AuthenticationPrincipal UUID me) {
         HabitSummary.Summary summary = summaryFor(me);
         if (summary.monthsAnalyzed() < 1) {
             throw ApiException.bad("Track at least one full month of income and expenses first, so the analysis has real habits to work with.");
         }
-        String text = coach.analyse(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(summary));
-        ObjectNode advice;
-        try {
-            advice = (ObjectNode) mapper.readTree(text);
-        } catch (JacksonException | ClassCastException e) {
-            throw new ApiException(org.springframework.http.HttpStatus.BAD_GATEWAY, "The AI returned an unreadable analysis.");
-        }
-        advice.put("generatedAt", Instant.now().toString());
-        db.sql("INSERT INTO ai_reports (id, user_id, kind, payload) VALUES (?, ?, 'investment', CAST(? AS jsonb))")
-                .params(UUID.randomUUID(), me, mapper.writeValueAsString(advice))
-                .update();
-        return response(true, summary, advice);
+        String summaryJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(summary);
+        jobs.start(me, "investment", () -> {
+            String text = coach.analyse(summaryJson);
+            ObjectNode advice;
+            try {
+                advice = (ObjectNode) mapper.readTree(text);
+            } catch (JacksonException | ClassCastException e) {
+                throw new ApiException(HttpStatus.BAD_GATEWAY, "The AI returned an unreadable analysis.");
+            }
+            advice.put("generatedAt", Instant.now().toString());
+            db.sql("INSERT INTO ai_reports (id, user_id, kind, payload) VALUES (?, ?, 'investment', CAST(? AS jsonb))")
+                    .params(UUID.randomUUID(), me, mapper.writeValueAsString(advice))
+                    .update();
+        });
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(state(me, summary));
     }
-
 }

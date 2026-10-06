@@ -2,7 +2,7 @@ import { DISCRETIONARY, categoryTotals, mean, monthlyTotals, stdev, sum, type Tx
 import { convert, round2 } from './currency';
 import { addMonths, monthKey } from './dates';
 import { detectRecurring } from './projections';
-import type { Account, Goal } from './types';
+import type { Account, Goal, InvestmentAdvice } from './types';
 
 /**
  * A compact, anonymised summary of a user's money habits — the only data sent
@@ -30,6 +30,25 @@ export interface HabitSummary {
   emergencyFundMonths: number;
   monthlyNet: { month: string; net: number }[];
   goals: { name: string; target: number; saved: number; deadline: string | null }[];
+}
+
+/** An AI analysis running in the background, or the last one that failed. */
+export interface AiJob {
+  status: 'running' | 'failed';
+  error: string | null;
+  startedAt: string;
+}
+
+/**
+ * GET /ai/investment (and POST's 202 answer). The coach runs in the background, so no request waits on the AI:
+ * while `job.status` is "running", check back every few seconds until the job is gone (the new advice is there)
+ * or has failed.
+ */
+export interface InvestmentState {
+  configured: boolean;
+  summary: HabitSummary;
+  advice: InvestmentAdvice | null;
+  job: AiJob | null;
 }
 
 export function habitSummary(txs: Tx[], accounts: Account[], goals: Goal[], currency: string, today = new Date()): HabitSummary {

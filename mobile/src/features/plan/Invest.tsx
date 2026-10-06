@@ -1,8 +1,9 @@
 import { View } from 'react-native';
-import type { InvestmentAdvice } from '@ft/core';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { InvestmentAdvice, InvestmentState } from '@ft/core';
 import { api } from '../../lib/api';
 import { useMoney } from '../../lib/format';
-import { keys, useApiMutation, useInvestment } from '../../lib/queries';
+import { keys, useInvestment } from '../../lib/queries';
 import { fonts, useTheme } from '../../lib/theme';
 import { Button, Card, Empty, ErrorState, Loading, ProgressBar, Rise, T } from '../../components/ui';
 
@@ -19,11 +20,18 @@ export function InvestSection() {
   const money = useMoney();
   const { c } = useTheme();
   const q = useInvestment();
-  const generate = useApiMutation(() => api('/ai/investment', { method: 'POST', body: {} }), [keys.investment]);
+  const qc = useQueryClient();
+  // The coach works in the background: POST answers at once with the job running, and the query checks back
+  // every few seconds until the analysis is in (useInvestment).
+  const generate = useMutation({
+    mutationFn: () => api<InvestmentState>('/ai/investment', { method: 'POST', body: {} }),
+    onSuccess: (state) => qc.setQueryData(keys.investment, state),
+  });
 
   if (q.isPending) return <Loading />;
   if (q.isError) return <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />;
-  const { summary: s, advice, configured } = q.data;
+  const { summary: s, advice, configured, job } = q.data;
+  const working = generate.isPending || job?.status === 'running';
 
   if (s.monthsAnalyzed < 2) {
     return (
@@ -93,7 +101,7 @@ export function InvestSection() {
       ) : null}
 
       {configured ? (
-        <Button title={advice ? 'Ask the coach again' : 'Ask the AI coach'} icon="sparkles" variant={advice ? 'secondary' : 'primary'} loading={generate.isPending} onPress={() => generate.mutate(undefined)} />
+        <Button title={advice ? 'Ask the coach again' : 'Ask the AI coach'} icon="sparkles" variant={advice ? 'secondary' : 'primary'} loading={working} onPress={() => generate.mutate()} />
       ) : (
         <Card style={{ backgroundColor: c.surface2 }}>
           <T v="small" tone="muted">
@@ -101,7 +109,12 @@ export function InvestSection() {
           </T>
         </Card>
       )}
-      {generate.isError ? <T tone="bad">{generate.error.message}</T> : null}
+      {working ? (
+        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          Reviewing {s.monthsAnalyzed} months of habits. This can take a minute, and it keeps going if you leave.
+        </T>
+      ) : null}
+      {generate.isError ? <T tone="bad">{generate.error.message}</T> : !working && job?.status === 'failed' ? <T tone="bad">{job.error}</T> : null}
     </>
   );
 }

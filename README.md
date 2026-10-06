@@ -251,8 +251,9 @@ Finally, add that `pages.dev` address (or your domain) to the R2 bucket's CORS `
 ([Profile photos](#profile-photos), step 3), so browsers may upload photos. The phone app talks to the Heroku URL
 directly: [mobile/README.md](mobile/README.md).
 
-**Limits to know**: Heroku ends a request after 30 seconds, and an AI coach analysis can take longer, so it may
-time out there. Essential-0 has no automatic backups: `heroku pg:backups:capture` takes one, and
+**Limits to know**: Heroku ends any request after 30 seconds. The AI coach can take longer, so it never makes a
+request wait: `POST /api/ai/investment` starts the analysis in the background and answers at once, and the apps check
+`GET /api/ai/investment` every few seconds until it's in. Essential-0 has no automatic backups: `heroku pg:backups:capture` takes one, and
 `heroku pg:backups:schedule --at "03:00 Europe/Bucharest"` makes it daily.
 
 ### Anywhere else
@@ -353,7 +354,7 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 | Money | `/accounts` · `/categories` · `/transactions` · `/transfers` (CRUD) |
 | Goals | `/goals` (CRUD) · `POST /goals/:id/contributions` |
 | Family | `GET/POST/PATCH /household` · `POST /household/join` · `/leave` · `/invite-code` · `DELETE /household/members/:id` |
-| Intelligence | `GET/POST /ai/investment` · `GET /fx` |
+| Intelligence | `GET /ai/investment` (habits, latest advice, analysis in progress) · `POST /ai/investment` (starts one in the background, 202) · `GET /fx` |
 
 ## Roadmap
 
