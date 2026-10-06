@@ -41,7 +41,14 @@ fintrack:
   ai:
     model: ${ANTHROPIC_MODEL:claude-opus-5-5}
   storage:
-    # Profile photos go to object storage, never the database. "local" is a stand-in bucket on disk with
-    # the same presigned-upload flow as S3 / Cloudflare R2 / DigitalOcean Spaces (see README → Profile photos).
+    # Profile photos go to object storage, never the database: "r2" is Cloudflare R2; "local" is a stand-in
+    # bucket on disk with the same presigned-upload flow, for development and tests (README → Profile photos).
     driver: ${STORAGE_DRIVER:local}
     local-dir: ${STORAGE_DIR:.data/uploads}
+    r2:
+      account-id: ${R2_ACCOUNT_ID:}
+      endpoint: ${R2_ENDPOINT:}
+      bucket: ${R2_BUCKET:}
+      access-key-id: ${R2_ACCESS_KEY_ID:}
+      secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+      public-url: ${R2_PUBLIC_URL:}

@@ -68,7 +68,7 @@ class ProfilePhotoTest extends PostgresTest {
         assertThat(upload(url, "image/png", WEBP)).isEqualTo(400);
         assertThat(upload(url, "image/webp", "not an image".getBytes())).isEqualTo(400);
         // Tampered link.
-        assertThat(upload(url.replace("max=2000000", "max=9000000"), "image/webp", WEBP)).isEqualTo(403);
+        assertThat(upload(url.replace("max=" + WEBP.length, "max=9000000"), "image/webp", WEBP)).isEqualTo(403);
         assertThat(upload(url, "image/webp", WEBP)).isEqualTo(200);
 
         JsonNode me = api.call(HttpMethod.PUT, "/api/me/avatar", Map.of("key", key), token).json();
@@ -82,7 +82,7 @@ class ProfilePhotoTest extends PostgresTest {
         assertThat(served.getHeader("Cache-Control")).contains("immutable");
 
         // Replacing deletes the old object.
-        JsonNode t2 = api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp"), token).json();
+        JsonNode t2 = api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp", "size", WEBP.length), token).json();
         assertThat(upload(t2.get("upload").get("url").stringValue(), "image/webp", WEBP)).isEqualTo(200);
         api.call(HttpMethod.PUT, "/api/me/avatar", Map.of("key", t2.get("key").stringValue()), token);
         assertThat(Files.exists(DIR.resolve(key))).isFalse();
@@ -99,10 +99,12 @@ class ProfilePhotoTest extends PostgresTest {
         String bob = register(api, "bob@test.dev");
         assertThat(api.post("/api/me/avatar/uploads", Map.of("contentType", "image/gif"), ana).status()).isEqualTo(400);
         assertThat(api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp", "size", 5_000_000), ana).status()).isEqualTo(400);
-        assertThat(api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp"), null).status()).isEqualTo(401);
+        assertThat(api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp", "size", 10), null).status()).isEqualTo(401);
+        // The exact size is required: it's signed into the upload link.
+        assertThat(api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp"), ana).status()).isEqualTo(400);
 
         // Someone else's key can't be claimed.
-        JsonNode t = api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp"), ana).json();
+        JsonNode t = api.post("/api/me/avatar/uploads", Map.of("contentType", "image/webp", "size", WEBP.length), ana).json();
         assertThat(upload(t.get("upload").get("url").stringValue(), "image/webp", WEBP)).isEqualTo(200);
         assertThat(api.call(HttpMethod.PUT, "/api/me/avatar", Map.of("key", t.get("key").stringValue()), bob).status()).isEqualTo(400);
 

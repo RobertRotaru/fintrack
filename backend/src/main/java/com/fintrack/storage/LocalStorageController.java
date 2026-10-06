@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.Arrays;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.CacheControl;
@@ -57,7 +56,7 @@ public class LocalStorageController {
         }
         if (bytes.length > max) throw bad("File is too large");
         if (bytes.length == 0) throw bad("File is empty");
-        if (!looksLike(ct, bytes)) throw bad("That doesn't look like a " + ct.substring(ct.indexOf('/') + 1) + " image");
+        if (!ImageSniff.matches(ct, bytes)) throw bad("That doesn't look like a " + ct.substring(ct.indexOf('/') + 1) + " image");
 
         Files.createDirectories(file.getParent());
         Path tmp = Files.createTempFile(file.getParent(), ".upload", ".tmp");
@@ -73,25 +72,9 @@ public class LocalStorageController {
         if (file == null || !Files.isRegularFile(file)) throw notFound("No such object");
         // Keys change on every upload, so an object never changes: cache it forever.
         return ResponseEntity.ok()
-                .contentType(typeOf(k))
+                .contentType(MediaType.parseMediaType(ImageSniff.typeOfKey(k)))
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
                 .header("X-Content-Type-Options", "nosniff")
                 .body(new FileSystemResource(file));
-    }
-
-    private static MediaType typeOf(String key) {
-        if (key.endsWith(".webp")) return MediaType.parseMediaType("image/webp");
-        if (key.endsWith(".png")) return MediaType.IMAGE_PNG;
-        return MediaType.IMAGE_JPEG;
-    }
-
-    /** Checks the file's magic bytes match the declared image type. */
-    static boolean looksLike(String contentType, byte[] b) {
-        return switch (contentType) {
-            case "image/jpeg" -> b.length > 3 && (b[0] & 0xff) == 0xff && (b[1] & 0xff) == 0xd8 && (b[2] & 0xff) == 0xff;
-            case "image/png" -> b.length > 8 && Arrays.equals(Arrays.copyOf(b, 8), new byte[] {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'});
-            case "image/webp" -> b.length > 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P';
-            default -> false;
-        };
     }
 }

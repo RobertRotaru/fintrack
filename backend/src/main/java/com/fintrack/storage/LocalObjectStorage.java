@@ -44,13 +44,13 @@ public class LocalObjectStorage implements ObjectStorage {
     }
 
     @Override
-    public Upload presignPut(String key, String contentType, long maxBytes, Duration ttl) {
+    public Upload presignPut(String key, String contentType, long size, Duration ttl) {
         if (file(key) == null) throw new IllegalArgumentException("Bad storage key: " + key);
         Instant expires = clock.instant().plus(ttl);
         long exp = expires.getEpochSecond();
-        String sig = sign(key, contentType, maxBytes, exp);
-        String url = PREFIX + key + "?ct=" + URLEncoder.encode(contentType, StandardCharsets.UTF_8) + "&max=" + maxBytes + "&exp=" + exp + "&sig=" + sig;
-        return new Upload("PUT", url, Map.of("Content-Type", contentType), maxBytes, expires);
+        String sig = sign(key, contentType, size, exp);
+        String url = PREFIX + key + "?ct=" + URLEncoder.encode(contentType, StandardCharsets.UTF_8) + "&max=" + size + "&exp=" + exp + "&sig=" + sig;
+        return new Upload("PUT", url, Map.of("Content-Type", contentType), size, expires);
     }
 
     @Override
@@ -59,9 +59,14 @@ public class LocalObjectStorage implements ObjectStorage {
     }
 
     @Override
-    public boolean exists(String key) {
+    public byte[] head(String key, int n) {
         Path f = file(key);
-        return f != null && Files.isRegularFile(f);
+        if (f == null || !Files.isRegularFile(f)) return null;
+        try (var in = Files.newInputStream(f)) {
+            return in.readNBytes(n);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

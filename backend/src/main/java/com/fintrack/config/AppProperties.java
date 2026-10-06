@@ -13,10 +13,19 @@ public record AppProperties(String jwtSecret, Duration tokenTtl, List<String> co
     /**
      * Where uploaded files (profile photos) live. Only the object key is kept in the database.
      *
-     * @param driver   "local" — a stand-in bucket on disk, served by this app (the default; see LocalObjectStorage)
+     * @param driver   "r2" — Cloudflare R2 (see R2ObjectStorage), or "local" — a stand-in bucket on disk served by
+     *                 this app, for development and tests (the default)
      * @param localDir directory the local bucket writes to
      */
-    public record Storage(String driver, String localDir) {}
+    public record Storage(String driver, String localDir, R2 r2) {}
+
+    /**
+     * Cloudflare R2 (or any S3-compatible bucket).
+     *
+     * @param accountId Cloudflare account id; the endpoint is derived from it unless {@code endpoint} is set
+     * @param publicUrl where objects are read from: the bucket's r2.dev URL or a custom domain
+     */
+    public record R2(String accountId, String endpoint, String bucket, String accessKeyId, String secretAccessKey, String publicUrl) {}
 
     public static final String DEV_SECRET = "dev-only-secret-change-me-32-chars-min";
 }

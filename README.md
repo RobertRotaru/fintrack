@@ -173,7 +173,8 @@ managed PostgreSQL database, all on one domain and redeployed on every push to `
 1. In DigitalOcean, **Apps → Create App → Import from app spec**, and upload `.do/app.yaml` (or run
    `doctl apps create --spec .do/app.yaml`). Allow DigitalOcean to access the GitHub repository when asked.
 2. Under the **api** component's environment variables, set `JWT_SECRET` to a random string of at least 32
-   characters (and `ANTHROPIC_API_KEY` to enable the AI coach). The database variables are already wired up.
+   characters, the `R2_*` values for profile photos (see [Profile photos](#profile-photos)), and
+   `ANTHROPIC_API_KEY` to enable the AI coach. The database variables are already wired up.
 3. Deploy. To use your own domain, add it under **Settings → Domains**; HTTPS is set up automatically.
 
 The API needs 1 GB of memory; the spec uses the smallest instance that has it, plus a dev database — roughly
@@ -192,37 +193,59 @@ app's static build (`npm run build -w web`) from any CDN or web server, with `/a
 
 ### Profile photos
 
-Photos never go into PostgreSQL: they'd bloat every backup and every query that reads a user. The API stores only
-an object **key**; the file lives in object storage and is uploaded straight from the browser:
+Photos never go into PostgreSQL (they'd bloat every backup and every query that reads a user). They live in
+**Cloudflare R2**; the database keeps only each photo's key, and uploads go from the browser straight to R2:
 
-1. `POST /api/me/avatar/uploads` → the API returns a new key and a presigned `PUT` link, valid for 5 minutes,
-   locked to one content type and 2 MB.
-2. The browser crops the photo to a 512px square (WebP, usually 10–40 KB) and `PUT`s it to that link: no session
-   token, the signature is the permission.
-3. `PUT /api/me/avatar {key}` → the profile points at the new key; the old photo is deleted.
+1. `POST /api/me/avatar/uploads {contentType, size}` → the API returns a new key and a presigned `PUT` link, valid
+   for 5 minutes and signed for exactly that content type, that size and a one-year cache header.
+2. The browser crops the photo to a 512px square (WebP, usually 10–40 KB) and `PUT`s it to R2 with that link: no
+   session token, the signature is the permission.
+3. `PUT /api/me/avatar {key}` → the API reads the first bytes back to check it really is that image type, points the
+   profile at the key and deletes the previous photo.
 
-Keys are random and change on every upload, so photos are served with a one-year immutable cache.
+Photos are read from the bucket's public address. Keys are random and change on every upload, so objects never
+change and are cached for a year.
 
-Everything goes through one small interface, `ObjectStorage` (`presignPut`, `publicUrl`, `exists`, `delete`). Today
-there's one implementation, **`local`**: a stand-in bucket on disk (`STORAGE_DIR`, git-ignored `.data/`) that the
-API itself serves at `/api/storage/…`, with HMAC-signed links that behave like S3's. That's for development and
-demos only: App Platform's disk is wiped on every deploy.
+**Setting up R2** (free up to 10 GB stored, 1M uploads and 10M reads a month, with no bandwidth fees):
 
-Cheap places to put the real thing, roughly in order of preference (prices change, so check before choosing):
+1. In the Cloudflare dashboard, open **R2 Object Storage → Create bucket**, e.g. `fintrack-photos`. The account id
+   is on the R2 overview page.
+2. Bucket **Settings → Public access**: connect a **custom domain** (e.g. `photos.yourdomain.com`; cached by
+   Cloudflare, recommended for production) or enable the **r2.dev** URL (rate-limited, fine for trying it out).
+   That address is `R2_PUBLIC_URL`.
+3. Bucket **Settings → CORS policy**, so browsers may upload from your app:
 
-| Option | Cost for a small app | Notes |
-|---|---|---|
-| **Cloudflare R2** | Free up to 10 GB stored, 1M uploads and 10M reads a month; no bandwidth fees | S3 API, so presigned uploads work as-is. Public bucket or custom domain for reads. **Recommended.** |
-| **DigitalOcean Spaces** | $5/month flat (250 GB, 1 TB transfer, built-in CDN) | Same bill and dashboard as the app; the Student Pack credit covers it. S3 API. |
-| **Backblaze B2** | First 10 GB free, then about $7/TB a month | S3 API; free egress through Cloudflare. A bit more setup. |
-| **Supabase / Firebase Storage** | Free tiers (1–5 GB) | Adds a second platform and SDK; signed uploads are supported. |
-| **Cloudinary / ImageKit** | Free tiers (~25 GB) | On-the-fly resizing and formats, but vendor-specific URLs. |
-| **A disk on the server** | DO Volume $1 per 10 GB on a Droplet | No extra service, but ties photos to one machine and doesn't work on App Platform. |
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://your-app.ondigitalocean.app", "http://localhost:5173"],
+       "AllowedMethods": ["PUT"],
+       "AllowedHeaders": ["content-type", "cache-control"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
 
-Switching to R2 or Spaces means adding `software.amazon.awssdk:s3` and an `S3ObjectStorage` (its presigner gives
-`presignPut`; `publicUrl` is the bucket's public URL plus the key), selected with `STORAGE_DRIVER=s3` plus the
-endpoint, bucket and keys. Then allow `PUT` from the app's origin in the bucket's CORS settings. Nothing in the
-web app or the database changes.
+4. **R2 → Manage API tokens → Create API token**: permission **Object Read & Write**, limited to this bucket.
+   Copy the **Access Key ID** and **Secret Access Key** (shown once).
+5. Configure the API (in `.env` locally, or as the api component's environment variables on DigitalOcean):
+
+   ```
+   STORAGE_DRIVER=r2
+   R2_ACCOUNT_ID=…           # or R2_ENDPOINT=https://… for another S3-compatible store
+   R2_BUCKET=fintrack-photos
+   R2_ACCESS_KEY_ID=…
+   R2_SECRET_ACCESS_KEY=…
+   R2_PUBLIC_URL=https://photos.yourdomain.com
+   ```
+
+   With `STORAGE_DRIVER=r2` the API won't start until all of these are set, and it says which are missing.
+
+Storage sits behind one small interface, `ObjectStorage` (`presignPut`, `publicUrl`, `head`, `delete`), with two
+implementations: `R2ObjectStorage` (the AWS SDK pointed at R2; any S3-compatible bucket works through
+`R2_ENDPOINT`) and **`local`**, the default, a stand-in bucket on disk (`STORAGE_DIR`, git-ignored `.data/`) that the
+API serves itself at `/api/storage/…` with HMAC-signed links that behave like R2's. `local` is for development and
+tests only: App Platform wipes its disk on every deploy.
 
 ### Moving over from the SQLite version
 
@@ -251,7 +274,7 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 
 | Area | Endpoints |
 |---|---|
-| Auth & profile | `POST /auth/register` · `POST /auth/login` · `GET/PATCH /auth/me` (name, bio, country, currency) · `POST /me/avatar/uploads` · `PUT/DELETE /me/avatar` |
+| Auth & profile | `POST /auth/register` · `POST /auth/login` · `GET/PATCH /auth/me` (name, bio, country, currency) · `POST /me/avatar/uploads` · `PUT/DELETE /me/avatar` (photo, via R2) |
 | Money | `/accounts` · `/categories` · `/transactions` · `/transfers` (CRUD) |
 | Goals | `/goals` (CRUD) · `POST /goals/:id/contributions` |
 | Family | `GET/POST/PATCH /household` · `POST /household/join` · `/leave` · `/invite-code` · `DELETE /household/members/:id` |
@@ -264,5 +287,4 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 - [ ] Bank sync via open banking (PSD2)
 - [ ] AI buying suggestions once a goal is reached
 - [ ] Push notifications for insights and goal milestones
-- [ ] Profile photos on Cloudflare R2 (an `S3ObjectStorage` behind the existing `ObjectStorage` interface)
-- [ ] Move account and goal pictures out of the database into the same storage
+- [ ] Move account and goal pictures out of the database into R2, like profile photos

@@ -5,6 +5,7 @@ import static com.fintrack.web.ApiException.unauthorized;
 
 import com.fintrack.data.Views;
 import com.fintrack.data.Visibility;
+import com.fintrack.storage.ImageSniff;
 import com.fintrack.storage.ObjectStorage;
 import com.fintrack.web.Body;
 import java.time.Duration;
@@ -52,19 +53,23 @@ public class ProfileController {
     @ResponseStatus(HttpStatus.CREATED)
     public UploadTicket upload(@AuthenticationPrincipal UUID me, Body b) {
         String type = b.oneOf("contentType", "Content type", TYPES.keySet());
-        if (b.has("size")) {
-            long size = b.num("size", "Size", Body.NumRule.decimals(0).min(java.math.BigDecimal.ONE)).longValue();
-            if (size > MAX_BYTES) throw bad("Photos can be up to 2 MB");
-        }
+        // The exact size is signed into the link, so storage refuses any other body.
+        long size = b.num("size", "Size", Body.NumRule.decimals(0).min(java.math.BigDecimal.ONE)).longValue();
+        if (size > MAX_BYTES) throw bad("Photos can be up to 2 MB");
         String key = prefix(me) + UUID.randomUUID().toString().replace("-", "") + "." + TYPES.get(type);
-        return new UploadTicket(key, storage.presignPut(key, type, MAX_BYTES, UPLOAD_TTL));
+        return new UploadTicket(key, storage.presignPut(key, type, size, UPLOAD_TTL));
     }
 
     @PutMapping
     public Views.User set(@AuthenticationPrincipal UUID me, Body b) {
         String key = b.str("key", "Key", 200);
         if (!key.startsWith(prefix(me))) throw bad("That photo isn't yours");
-        if (!storage.exists(key)) throw bad("Upload the photo first");
+        byte[] header = storage.head(key, ImageSniff.HEADER_BYTES);
+        if (header == null) throw bad("Upload the photo first");
+        if (!ImageSniff.matches(ImageSniff.typeOfKey(key), header)) {
+            storage.delete(key);
+            throw bad("That file isn't a photo");
+        }
         String old = currentKey(me);
         db.sql("UPDATE users SET avatar_key = ? WHERE id = ?").params(key, me).update();
         if (old != null && !old.equals(key)) storage.delete(old);
