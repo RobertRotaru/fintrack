@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Fintrack",
+    "slug": "fintrack",
+    "scheme": "fintrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#f6f2ea",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.robertrotaru.fintrack"
+    },
+    "android": {
+      "package": "com.robertrotaru.fintrack",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1d5c3d"
+      }
+    },
+    "web": {
+      "favicon": "./assets/icon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 96,
+          "backgroundColor": "#f6f2ea",
+          "dark": {
+            "image": "./assets/icon.png",
+            "backgroundColor": "#0a101c"
+          }
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Fintrack uses Face ID to keep your finances private."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Fintrack lets you choose a profile photo from your library.",
+          "cameraPermission": "Fintrack lets you take a profile photo."
+        }
+      ]
+    ]
+  }
+}

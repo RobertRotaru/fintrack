@@ -6,19 +6,21 @@
   },
   "workspaces": [
     "packages/*",
-    "web"
+    "web",
+    "mobile"
   ],
   "scripts": {
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev -w web\"",
     "dev:api": "node scripts/gradle.mjs bootRun",
     "db:up": "docker compose up -d db",
     "build": "npm run build -w web && node scripts/gradle.mjs bootJar",
-    "typecheck": "npm run typecheck -w web",
+    "typecheck": "npm run typecheck -w web && npm run typecheck -w mobile",
     "test": "vitest run",
     "test:backend": "node scripts/gradle.mjs test",
     "test:contract": "vitest run -c vitest.contract.config.ts",
     "e2e": "node e2e/states.e2e.mjs",
-    "export:backend-data": "tsx packages/core/scripts/export-backend-data.ts"
+    "export:backend-data": "tsx packages/core/scripts/export-backend-data.ts",
+    "mobile": "npm run start -w mobile"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

@@ -20,6 +20,22 @@ jobs:
       - run: npm test
       - run: npm run build -w web
 
+  mobile:
+    name: Mobile app (unit tests, iOS bundle)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck -w mobile
+      - run: npm test -w mobile
+      # Builds the JavaScript bundle Expo Go loads on an iPhone, so a broken import fails here.
+      - run: npx expo export --platform ios --output-dir dist-ios
+        working-directory: mobile
+
   backend:
     name: Backend (JUnit on embedded PostgreSQL)
     runs-on: ubuntu-latest
