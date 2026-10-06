@@ -2,10 +2,12 @@ import { toast } from 'sonner';
 import { Info, KeyRound, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
 import { Cell, Pie, PieChart, Tooltip } from 'recharts';
 import { ResponsiveContainer } from '../components/ResponsiveChart';
-import type { HabitSummary, InvestmentAdvice } from '@ft/core';
+import { useEffect, useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { HabitSummary, InvestmentAdvice, InvestmentState } from '@ft/core';
 import { api } from '../lib/api';
 import { useMoney, percent } from '../lib/format';
-import { keys, useApiMutation, useInvestment } from '../lib/queries';
+import { keys, useInvestment } from '../lib/queries';
 import { ChartTooltip } from '../components/charts';
 import { Button, Card, CardHeader, PageHeader, Empty, clsx } from '../components/ui';
 import { loadGate } from '../components/states';
@@ -29,19 +31,33 @@ const READINESS = {
 export function Invest() {
   const investQ = useInvestment();
   const { data } = investQ;
-  const analyze = useApiMutation(() => api<{ advice: InvestmentAdvice }>('/ai/investment', { method: 'POST' }), [keys.investment]);
+  const qc = useQueryClient();
+  // The coach works in the background: POST answers at once with the job running, and the query checks back
+  // every few seconds until the analysis is in (useInvestment).
+  const analyze = useMutation({
+    mutationFn: () => api<InvestmentState>('/ai/investment', { method: 'POST' }),
+    onSuccess: (state) => qc.setQueryData(keys.investment, state),
+  });
+  const job = data?.job;
+  const working = analyze.isPending || job?.status === 'running';
+
+  // Say when a run we watched finishes, even if the page was opened mid-way.
+  const wasWorking = useRef(false);
+  useEffect(() => {
+    if (wasWorking.current && !working && data) {
+      if (data.job?.status === 'failed') toast.error(data.job.error ?? 'The analysis failed. Try again.');
+      else if (data.advice) toast.success('Your analysis is ready');
+    }
+    wasWorking.current = working;
+  }, [working, data]);
 
   const gate = loadGate([investQ], 'charts');
   if (gate || !data) return gate;
   const { summary, advice, configured } = data;
 
-  async function run() {
-    try {
-      await analyze.mutateAsync(undefined);
-      toast.success('Your analysis is ready');
-    } catch {
-      // The global mutation error handler already showed a toast.
-    }
+  function run() {
+    // Errors (no history yet, offline) are shown by the global mutation error handler.
+    analyze.mutate();
   }
 
   return (
@@ -50,7 +66,7 @@ export function Invest() {
         title="Investing coach"
         subtitle="AI suggestions based on how you actually earn, spend and save."
         action={
-          <Button onClick={run} loading={analyze.isPending} disabled={summary.monthsAnalyzed < 1}>
+          <Button onClick={run} loading={working} disabled={summary.monthsAnalyzed < 1}>
             {advice ? <RefreshCw className="size-4" /> : <Sparkles className="size-4" />}
             {advice ? 'Re-analyse' : 'Analyse my habits'}
           </Button>
@@ -88,17 +104,27 @@ export function Invest() {
         <Snapshot s={summary} />
       )}
 
-      {analyze.isPending && (
+      {working && (
         <Card className="flex items-center gap-4">
           <Sparkles className="size-6 animate-pulse text-brand-fg" />
           <div>
             <p className="font-semibold">Reviewing {summary.monthsAnalyzed} months of habits…</p>
-            <p className="text-sm text-muted">This usually takes 20–40 seconds.</p>
+            <p className="text-sm text-muted">This can take a minute. It keeps going if you leave this page.</p>
           </div>
         </Card>
       )}
 
-      {advice && !analyze.isPending && <Advice a={advice} currency={summary.currency} />}
+      {!working && job?.status === 'failed' && (
+        <Card className="flex gap-3">
+          <Info className="mt-0.5 size-5 shrink-0 text-bad" />
+          <div className="text-sm">
+            <p className="font-semibold">The last analysis didn’t finish</p>
+            <p className="mt-1 text-muted">{job.error}</p>
+          </div>
+        </Card>
+      )}
+
+      {advice && !working && <Advice a={advice} currency={summary.currency} />}
     </div>
   );
 }

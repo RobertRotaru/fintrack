@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { accountFlows, normalize, setRates, type FxSnapshot, type Account, type Category, type Goal, type HabitSummary, type Household, type InvestmentAdvice, type Transaction, type Transfer } from '@ft/core';
+import { accountFlows, normalize, setRates, type FxSnapshot, type Account, type Category, type Goal, type Household, type InvestmentState, type Transaction, type Transfer } from '@ft/core';
 import { api } from './api';
 import { useUser } from './auth';
 
@@ -39,7 +39,9 @@ export const useHousehold = () => useQuery({ queryKey: keys.household, queryFn: 
 export const useInvestment = () =>
   useQuery({
     queryKey: keys.investment,
-    queryFn: () => api<{ configured: boolean; summary: HabitSummary; advice: InvestmentAdvice | null }>('/ai/investment'),
+    queryFn: () => api<InvestmentState>('/ai/investment'),
+    // While the coach works in the background, check back every few seconds.
+    refetchInterval: (q) => (q.state.data?.job?.status === 'running' ? 3000 : false),
   });
 
 /** All visible transactions converted to the user's base currency, for analytics. */

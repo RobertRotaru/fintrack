@@ -1,0 +1,4 @@
+# Heroku (container stack) builds the API from backend/Dockerfile on every deploy. README → Deploying.
+build:
+  docker:
+    web: backend/Dockerfile

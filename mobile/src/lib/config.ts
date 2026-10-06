@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 /**
  * Where the API lives.
  *
- * 1. `EXPO_PUBLIC_API_URL`, when set (e.g. your DigitalOcean app: https://fintrack-xxxx.ondigitalocean.app).
+ * 1. `EXPO_PUBLIC_API_URL`, when set (e.g. your Heroku app: https://fintrack-yourname-1a2b3c.herokuapp.com).
  * 2. Otherwise, in development, the computer running `expo start`: Expo Go on your phone already knows its
  *    LAN address (that's how it loads the app), so the API is the same host on port 4000.
  */

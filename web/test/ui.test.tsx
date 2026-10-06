@@ -653,3 +653,45 @@ describe('profile', () => {
     expect(screen.getByRole('link', { name: /edit your profile/i })).toHaveAttribute('href', '/profile');
   });
 });
+
+// ---------------------------------------------------------------------------
+describe('investing coach', () => {
+  const golden = JSON.parse(readFileSync(resolve(__dirname, '../../backend/src/test/resources/golden/habit-summary.json'), 'utf8'));
+  const advice = {
+    generatedAt: '2026-10-06T12:00:00Z', riskProfile: 'moderate', summary: 'You keep a healthy buffer.',
+    readiness: { emergencyFundMonths: 4, status: 'ready', explanation: 'Four months saved.' }, monthlyInvestable: 300,
+    allocation: [{ label: 'Global equity index funds', percent: 100, rationale: 'Long horizon.' }],
+    recommendations: [{ title: 'Automate a monthly transfer', detail: 'On payday.', priority: 'high' }],
+    habitsObserved: ['Steady income'], disclaimer: 'Educational only.',
+  };
+  const state = (over: object) => ({ configured: true, summary: golden.expected, advice: null, job: null, ...over });
+
+  it('starts the analysis in the background, then shows the advice once it is in', async () => {
+    let phase: 'idle' | 'running' | 'done' = 'idle';
+    const runningJob = { job: { status: 'running', error: null, startedAt: '' } };
+    const fetchMock = mockApi({
+      'GET /ai/investment': () => ({ status: 200, body: state(phase === 'running' ? runningJob : phase === 'done' ? { advice } : {}) }),
+      'POST /ai/investment': () => {
+        phase = 'running';
+        return { status: 202, body: state(runningJob) };
+      },
+    });
+    const { Invest } = await import('../src/pages/Invest');
+    render(<Providers><Invest /></Providers>);
+    fireEvent.click(await screen.findByText('Analyse my habits'));
+    expect(await screen.findByText(/It keeps going if you leave this page/)).toBeInTheDocument();
+    // Each request returns at once; the page checks back until the job is done.
+    phase = 'done';
+    expect(await screen.findByText('You keep a healthy buffer.', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.queryByText(/It keeps going/)).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1);
+  });
+
+  it('shows why the last analysis failed', async () => {
+    mockApi({ 'GET /ai/investment': () => ({ status: 200, body: state({ job: { status: 'failed', error: 'The AI coach is busy — try again in a minute.', startedAt: '' } }) }) });
+    const { Invest } = await import('../src/pages/Invest');
+    render(<Providers><Invest /></Providers>);
+    expect(await screen.findByText('The AI coach is busy — try again in a minute.')).toBeInTheDocument();
+    expect(screen.getByText('Analyse my habits')).toBeEnabled();
+  });
+});

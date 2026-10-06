@@ -38,14 +38,14 @@ which runs the API), on **private networks**. If the iPhone can't reach the API 
   `netsh advfirewall firewall add rule name="Fintrack API" dir=in action=allow protocol=TCP localport=4000`
 
 **Using the deployed API instead** (no computer running the API, or a network that blocks devices from seeing each
-other): point the app at it before starting.
+other): point the app at your Heroku app's Web URL (`heroku info` shows it; README → Deploying) before starting.
 
 ```powershell
-$env:EXPO_PUBLIC_API_URL = "https://your-fintrack.ondigitalocean.app"; npm run mobile        # PowerShell
+$env:EXPO_PUBLIC_API_URL = "https://fintrack-yourname-1a2b3c.herokuapp.com"; npm run mobile        # PowerShell
 ```
 
 ```bash
-EXPO_PUBLIC_API_URL=https://your-fintrack.ondigitalocean.app npm run mobile                   # macOS / Linux
+EXPO_PUBLIC_API_URL=https://fintrack-yourname-1a2b3c.herokuapp.com npm run mobile                   # macOS / Linux
 ```
 
 If the phone and computer can't be on the same network at all, `npx expo start --tunnel` (inside `mobile/`) serves
