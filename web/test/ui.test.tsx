@@ -292,7 +292,7 @@ describe('motion budget (static CSS checks)', () => {
     expect(ms).toBeLessThanOrEqual(300);
   });
   it('animations only touch compositor-friendly properties', () => {
-    for (const name of ['page-in', 'fade-in', 'pulse-soft', 'pop']) {
+    for (const name of ['page-in', 'fade-in', 'pulse-soft', 'pop', 'rise', 'ambient-a', 'ambient-b', 'ill-breathe', 'ill-drift', 'ill-shimmer', 'ill-sway', 'ill-beat', 'spark-dot', 'spark-ping']) {
       const props = [...keyframes(name).matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
       expect(props.length, name).toBeGreaterThan(0);
       expect(props.every((p) => p === 'opacity' || p === 'transform'), `${name}: ${props}`).toBe(true);
@@ -300,7 +300,7 @@ describe('motion budget (static CSS checks)', () => {
   });
   it('honours reduced-motion preferences', () => {
     const block = css.match(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
-    for (const cls of ['.page-enter', '.skeleton', '.skeleton-in', '.animate-pop']) expect(block).toContain(cls);
+    for (const cls of ['.page-enter', '.skeleton', '.skeleton-in', '.animate-pop', '.stagger > *', '.ambient > span', '.ill-sway', '.spark-draw']) expect(block).toContain(cls);
     expect(block).toContain('animation: none');
   });
 });
@@ -376,6 +376,26 @@ describe('navigation shell', () => {
     for (const l of ['Activity', 'Projections', 'Invest']) expect(more).toHaveTextContent(l);
     expect(screen.getAllByRole('link', { name: /settings/i }).some((a) => a.getAttribute('href') === '/settings')).toBe(true);
   });
+  it('desktop sidebar is a collapsed rail that expands on hover or focus, over the page', () => {
+    mockApi({ '/categories': () => empty, '/accounts': () => empty, '/transactions': () => empty });
+    const { container } = render(
+      <Providers>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<h1>home</h1>} />
+          </Route>
+        </Routes>
+      </Providers>,
+    );
+    const aside = container.querySelector('aside')!;
+    expect(aside.className).toMatch(/\bw-\[76px\]/);
+    expect(aside.className).toMatch(/hover:w-\[264px\]/);
+    expect(aside.className).toMatch(/focus-within:w-\[264px\]/);
+    // The page is padded for the rail only, so expanding overlays rather than shifts content.
+    expect(container.firstElementChild!.className).toMatch(/lg:pl-\[76px\]/);
+    // Labels stay in the accessible tree while collapsed.
+    expect(within(aside).getByRole('link', { name: 'Spending' })).toBeInTheDocument();
+  });
 });
 
 describe('home narrative', () => {
@@ -389,11 +409,15 @@ describe('home narrative', () => {
     });
     render(<Providers><Home /></Providers>);
     expect(await screen.findByRole('heading', { level: 1, name: 'You’re in a good place.' })).toBeInTheDocument();
-    expect(screen.getByTestId('home-mood')).toHaveTextContent('Good');
+    // A plain welcome, no time-of-day greeting or emoji.
+    expect(screen.getByTestId('home-mood')).toHaveTextContent(`Welcome back, ${USER.name.split(' ')[0]}`);
+    expect(screen.getByTestId('home-mood').textContent).not.toMatch(/Good (morning|afternoon|evening|night)|👋/u);
     expect(screen.getByTestId('net-worth').getAttribute('aria-label')).toMatch(/5,?100/);
     expect(screen.getByTestId('glance-spending')).toHaveAttribute('href', '/spending');
     expect(screen.getByTestId('glance-saving')).toHaveTextContent('5,000');
     expect(screen.getByTestId('glance-investing')).toHaveTextContent('Not investing yet');
+    // Savings trend carries its 30-day shape alongside the figure.
+    expect(within(screen.getByTestId('glance-saving')).getByTestId('trend-spark')).toBeInTheDocument();
     // Net worth range filters.
     const chart = screen.getByTestId('net-worth-chart');
     for (const r of ['1M', '3M', '6M', '1Y', 'ALL']) expect(within(chart).getByRole('tab', { name: r })).toBeInTheDocument();

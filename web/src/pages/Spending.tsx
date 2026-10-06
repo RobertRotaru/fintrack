@@ -6,7 +6,7 @@ import { ResponsiveContainer } from '../components/ResponsiveChart';
 import { addMonths, categoryTotals, inMonth, monthKey, monthLabel, monthlyReport, pctChange } from '@ft/core';
 import { formatDay, percent, useMoney } from '../lib/format';
 import { useTxs } from '../lib/queries';
-import { CategoryDonut, ChartTooltip, Legend, axisProps } from '../components/charts';
+import { CategoryDonut, ChartTooltip, Legend, TrendSpark, axisProps } from '../components/charts';
 import { Card, Empty, IconBadge, IconButton, PageHeader, Segmented, Trend } from '../components/ui';
 import { loadGate } from '../components/states';
 
@@ -47,6 +47,7 @@ export function Spending() {
   const change = prevToDate ? pctChange(r.expense, prevToDate) : null;
   const biggest = r.expenseByCategory[0];
   const hasAny = txs.some((t) => t.kind === 'expense');
+  const spendSoFar = r.dailyCumulative.flatMap((d) => (d.current === null ? [] : [d.current]));
 
   const drill = (category?: string) => {
     const p = new URLSearchParams({ month });
@@ -82,14 +83,22 @@ export function Spending() {
         </Card>
       ) : (
         <div className="space-y-14">
-          <section className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
+          <section className="stagger grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
             <div>
               <p className="eyebrow">Total spending</p>
               <p className="figure mt-2 text-6xl leading-none" data-testid="spending-total">
                 {money(r.expense)}
               </p>
               <div className="mt-3">
-                <Trend value={change} inverse suffix={isCurrent ? 'vs. last month so far' : 'vs. last month'} />
+                <TrendSpark
+                  value={change}
+                  inverse
+                  suffix={isCurrent ? 'vs. this point last month' : 'vs. last month'}
+                  current={spendSoFar}
+                  previous={r.dailyCumulative.slice(0, Math.max(spendSoFar.length, 2)).map((d) => d.previous)}
+                  width={96}
+                  height={36}
+                />
               </div>
               {biggest ? (
                 <p className="mt-6 max-w-sm font-display text-2xl leading-snug text-ink-2">
@@ -150,11 +159,11 @@ export function Spending() {
             </Card>
           </section>
 
-          <section className="grid gap-10 lg:grid-cols-2">
+          <section className="stagger grid gap-10 lg:grid-cols-2">
             <div>
               <h2 className="mb-5 text-[28px] leading-tight">Biggest expenses</h2>
               {r.topExpenses.length ? (
-                <ul className="space-y-1">
+                <ul className="stagger space-y-1">
                   {r.topExpenses.map((t) => (
                     <li key={t.id} className="row-hover flex items-center gap-3 rounded-2xl px-3 py-2.5">
                       <IconBadge icon={t.icon} color={t.color} size="md" />
@@ -174,14 +183,14 @@ export function Spending() {
             </div>
             <div>
               <h2 className="mb-5 text-[28px] leading-tight">Compared with last month</h2>
-              <ul className="space-y-4">
+              <ul className="stagger space-y-4">
                 {r.expenseByCategory.slice(0, 6).map((c) => {
                   const max = Math.max(...r.expenseByCategory.slice(0, 6).map((x) => Math.max(x.total, x.previous)), 1);
                   return (
                     <li key={c.name}>
                       <div className="mb-1.5 flex items-center justify-between text-sm">
                         <span className="text-ink-2">{c.name}</span>
-                        <span className="flex items-center gap-3">
+                        <span className="flex items-baseline gap-3">
                           <span className="font-semibold num">{money(c.total)}</span>
                           <Trend value={c.change} inverse className="!text-xs w-14 justify-end" />
                         </span>

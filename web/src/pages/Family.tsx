@@ -67,7 +67,7 @@ function NoFamily() {
     <div>
       <PageHeader title="Family" subtitle="Budget together — share accounts and goals with your partner or family." />
       <FamilyHero />
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="stagger grid gap-6 md:grid-cols-2">
         <Card>
           <Empty icon="users" title="Start a family">
             Create a shared space, then invite your partner with a code. You choose which accounts and goals to share — everything else stays private.
@@ -318,7 +318,7 @@ function FamilyHome({ household }: { household: Household }) {
       {shared.length > 0 && (
         <section>
           <h2 className="mb-3 font-semibold">Shared accounts</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {shared.map((a) => (
               <AccountCard key={a.id} account={a} compact sharedBy={ownerName(a.ownerId)} />
             ))}

@@ -80,7 +80,7 @@ export function Goals() {
           {active.length > 0 && (
             <>
               <h2 className="mb-5 text-[28px] leading-tight">Your goals</h2>
-              <ul className="space-y-4">
+              <ul className="stagger space-y-4">
                 {active.map((g) => (
                   <li key={g.id}>
                     <GoalCard goal={g} onClick={() => setOpenId(g.id)} />
@@ -94,7 +94,7 @@ export function Goals() {
               <h2 className="mb-5 mt-14 flex items-center gap-2 text-[28px] leading-tight">
                 <PartyPopper className="size-6 text-brand-fg" /> Reached
               </h2>
-              <ul className="space-y-4">
+              <ul className="stagger space-y-4">
                 {done.map((g) => (
                   <li key={g.id}>
                     <GoalCard goal={g} onClick={() => setOpenId(g.id)} />
@@ -266,7 +266,7 @@ function GoalDetail({ goal, onClose }: { goal: Goal; onClose: () => void }) {
               ? `You usually have about ${m(surplus)} left at the end of a month. Plans are based on that.`
               : 'We don’t see a monthly surplus yet, so these plans spread the remaining amount over time.'}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="stagger grid gap-3 sm:grid-cols-2">
             {plan.plans.map((p) => (
               <div key={p.id} className={clsx('rounded-2xl border p-4', p.id === 'balanced' ? 'border-brand bg-brand-soft' : 'border-line')}>
                 <div className="flex items-center justify-between">

@@ -135,7 +135,7 @@ function Overview({ month }: { month: string }) {
           <h2 className="text-[28px] leading-tight">Monthly overview</h2>
           <span className="text-sm text-muted">{monthLabel(month, 'long')}</span>
         </div>
-        <div className="grid gap-px overflow-hidden rounded-[24px] border border-line bg-line sm:grid-cols-3" data-testid="overview-metrics">
+        <div className="stagger grid gap-px overflow-hidden rounded-[24px] border border-line bg-line sm:grid-cols-3" data-testid="overview-metrics">
           {metrics.map((m) => (
             <div key={m.label} className="bg-surface p-6 sm:p-7">
               <p className="text-sm font-medium text-ink-2">{m.label}</p>
@@ -185,7 +185,7 @@ function Overview({ month }: { month: string }) {
           <CardHeader title="Savings rate" subtitle="Share of income you kept" />
           <p className="figure text-5xl">{r.income ? percent(r.savingsRate) : '—'}</p>
           <p className="mt-1 text-sm text-muted">{r.prev.income ? `${percent(r.prev.savingsRate)} in ${prevLabel}` : 'Nothing to compare yet'}</p>
-          <ul className="mt-6 space-y-3">
+          <ul className="stagger mt-6 space-y-3">
             {six.slice(-4).map((m) => (
               <li key={m.month} className="flex items-center gap-3 text-sm">
                 <span className="w-10 text-muted">{m.label}</span>
@@ -236,7 +236,7 @@ function NetWorthReport() {
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card className="!p-7">
           <CardHeader title="What it’s made of" subtitle="By account type, at today’s rates" />
-          <ul className="space-y-4">
+          <ul className="stagger space-y-4">
             {groups.map((g) => (
               <li key={g.type}>
                 <div className="mb-1.5 flex items-center justify-between text-sm">
@@ -336,7 +336,7 @@ function MonthReport({ month, kind }: { month: string; kind: TxKind }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="stagger grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Income" value={money(r.income)} change={pctChange(r.income, r.prev.income)} hint={`vs ${prevLabel}`} />
         <Kpi label="Expenses" value={money(r.expense)} change={pctChange(r.expense, r.prev.expense)} inverse hint={`vs ${prevLabel}`} />
         <Kpi label="Net" value={money(r.net, { sign: true })} hint={`${money(r.prev.net, { sign: true })} in ${prevLabel}`} />
@@ -439,7 +439,7 @@ function YearReport({ year, kind }: { year: number; kind: TxKind }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="stagger grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Income" value={money(r.income)} change={yoy ? pctChange(c.current.income, c.previous.income) : undefined} hint={yoyHint} />
         <Kpi label="Expenses" value={money(r.expense)} change={yoy ? pctChange(c.current.expense, c.previous.expense) : undefined} inverse hint={yoyHint} />
         <Kpi label="Saved" value={money(r.net, { sign: true })} hint={r.prevYear.income || r.prevYear.expense ? `${money(r.prevYear.net, { sign: true })} in ${year - 1}` : undefined} />

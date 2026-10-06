@@ -23,11 +23,6 @@ export function formatDay(date: string): string {
   return d.toLocaleDateString(undefined, { weekday: diff < 7 ? 'long' : undefined, day: 'numeric', month: 'short', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
 }
 
-export function greeting(): string {
-  const h = new Date().getHours();
-  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-}
-
 /** Readable text colour on top of an arbitrary background colour. */
 export function onColor(hex: string): string {
   const m = hex.replace('#', '');

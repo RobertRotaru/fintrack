@@ -114,11 +114,12 @@ export function NetWorthChart({
     <div data-testid="net-worth-chart">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {showSummary ? (
-          <p className="text-sm text-muted" data-testid="net-worth-range-summary">
+          <p className="flex flex-wrap items-baseline gap-x-1.5 text-sm text-muted" data-testid="net-worth-range-summary">
             <span className={clsx('font-semibold num', change >= 0 ? 'text-good' : 'text-bad')}>
               {money(change, { sign: true })}
-            </span>{' '}
-            {pct !== null && <Trend value={pct} className="!text-xs" />} over {RANGE_LABEL[range]}
+            </span>
+            {pct !== null && <Trend value={pct} />}
+            <span>over {RANGE_LABEL[range]}</span>
           </p>
         ) : (
           <span />
@@ -178,6 +179,81 @@ export function NetWorthChart({
 }
 
 /** A tiny trend line for rows and summaries. */
+/** A smooth SVG path through points, using midpoint quadratic curves. */
+function smoothPath(pts: (readonly [number, number])[]): string {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    d += ` Q${x0},${y0} ${(x0 + x1) / 2},${(y0 + y1) / 2}`;
+  }
+  return `${d} T${pts.at(-1)![0]},${pts.at(-1)![1]}`;
+}
+
+/**
+ * A change figure with the shape behind it: a small chart of the period
+ * (and, dashed, the period it's compared with), then the percentage and what
+ * it's measured against. `current` may be shorter than `previous` — this
+ * month so far, drawn against the whole of last month.
+ */
+export function TrendSpark({
+  value,
+  inverse,
+  suffix,
+  current,
+  previous,
+  width = 76,
+  height = 30,
+  className,
+}: {
+  value: number | null;
+  inverse?: boolean;
+  suffix?: string;
+  current: number[];
+  previous?: number[];
+  width?: number;
+  height?: number;
+  className?: string;
+}) {
+  const gid = useId().replace(/:/g, '');
+  const len = Math.max(current.length, previous?.length ?? 0);
+  const chart = current.length >= 2 && len >= 2;
+  const all = [...current, ...(previous ?? [])];
+  const lo = Math.min(...all);
+  const span = Math.max(...all) - lo || 1;
+  const at = (v: number, i: number) => [(i / (len - 1)) * width, height - 3 - ((v - lo) / span) * (height - 6)] as const;
+  const cur = chart ? current.map(at) : [];
+  const prev = chart && previous && previous.length >= 2 ? previous.map(at) : [];
+  const flat = value === null || !Number.isFinite(value) || Math.abs(value) < 0.05;
+  const good = inverse ? (value ?? 0) < 0 : (value ?? 0) > 0;
+  const stroke = flat ? 'var(--muted)' : good ? 'var(--good)' : 'var(--bad)';
+  const end = cur.at(-1);
+  const line = chart ? smoothPath(cur) : '';
+  return (
+    <span className={clsx('inline-flex items-center gap-3', className)}>
+      {chart && (
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="shrink-0 overflow-visible" data-testid="trend-spark">
+          <defs>
+            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={stroke} stopOpacity={0.25} />
+              <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          {prev.length > 0 && <path d={smoothPath(prev)} fill="none" stroke="var(--line-strong)" strokeWidth={1.5} strokeDasharray="2 3" strokeLinecap="round" />}
+          <path d={`${line} L${end![0]},${height} L0,${height} Z`} fill={`url(#${gid})`} className="spark-fill" />
+          <path d={line} fill="none" stroke={stroke} strokeWidth={2} strokeLinecap="round" pathLength={1} className="spark-draw" />
+          <circle cx={end![0]} cy={end![1]} r={5} fill={stroke} opacity={0.2} className="spark-ping" />
+          <circle cx={end![0]} cy={end![1]} r={2.5} fill={stroke} className="spark-dot" />
+        </svg>
+      )}
+      <span className="flex min-w-0 flex-col leading-tight">
+        <Trend value={value} inverse={inverse} />
+        {suffix && <span className="mt-0.5 text-xs text-muted">{suffix}</span>}
+      </span>
+    </span>
+  );
+}
+
 export function Sparkline({ values, width = 96, height = 32, color, className }: { values: number[]; width?: number; height?: number; color?: string; className?: string }) {
   const gid = useId().replace(/:/g, '');
   if (values.length < 2) return null;

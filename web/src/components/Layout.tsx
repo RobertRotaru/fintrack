@@ -40,6 +40,9 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
+/** Text in the sidebar that only shows once the rail is expanded. */
+const REVEAL = 'side-reveal whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/side:opacity-100 group-hover/side:delay-75 group-focus-within/side:opacity-100';
+
 function SideLink({ to, label, icon: I, end }: NavItem) {
   return (
     <NavLink
@@ -47,16 +50,16 @@ function SideLink({ to, label, icon: I, end }: NavItem) {
       end={end}
       className={({ isActive }) =>
         clsx(
-          'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[14px] font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
+          'group relative flex items-center gap-3 rounded-xl px-[17px] py-2 text-[14px] font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
           isActive ? 'bg-surface text-ink shadow-[var(--shadow)]' : 'text-ink-2 hover:bg-surface/60 hover:text-ink',
         )
       }
     >
       {({ isActive }) => (
         <>
-          <span className={clsx('absolute -left-4 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-brand transition-opacity', isActive ? 'opacity-100' : 'opacity-0')} />
-          <I className={clsx('size-[18px] transition', isActive ? 'text-brand-fg' : 'text-muted group-hover:text-ink-2')} strokeWidth={isActive ? 2.2 : 1.8} />
-          {label}
+          <span className={clsx('absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-brand transition-opacity', isActive ? 'opacity-100' : 'opacity-0')} />
+          <I className={clsx('size-[18px] shrink-0 transition', isActive ? 'text-brand-fg' : 'text-muted group-hover:text-ink-2')} strokeWidth={isActive ? 2.2 : 1.8} />
+          <span className={REVEAL}>{label}</span>
         </>
       )}
     </NavLink>
@@ -94,26 +97,37 @@ export function Layout() {
   const ThemeIcon = theme === 'dark' ? Sun : Moon;
 
   return (
-    <div className="min-h-screen lg:pl-[264px]">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[264px] flex-col border-r border-line bg-sidebar/80 backdrop-blur-xl px-4 py-7">
-        <div className="mb-9 flex items-center gap-2.5 px-3">
-          <BrandMark className="size-8" />
-          <span className="font-display text-[26px] leading-none tracking-[-0.02em]">Fintrack</span>
+    <div className="shell relative isolate min-h-screen lg:pl-[76px]">
+      {/* Slow-moving colour behind every page. */}
+      <div aria-hidden="true" className="ambient pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <span className="ambient-a" />
+        <span className="ambient-b" />
+      </div>
+
+      {/* Desktop sidebar: an icon rail that opens over the page on hover (or keyboard focus). */}
+      <aside className="side-rail group/side hidden lg:flex fixed inset-y-0 left-0 z-40 w-[76px] flex-col overflow-hidden border-r border-line bg-sidebar/85 backdrop-blur-xl px-3 py-7 transition-[width,box-shadow] duration-300 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:w-[264px] hover:delay-75 hover:shadow-[var(--shadow-lg)] focus-within:w-[264px] focus-within:shadow-[var(--shadow-lg)]">
+        <div className="mb-9 flex items-center gap-2.5 px-[10px]">
+          <BrandMark className="size-8 shrink-0" />
+          <span className={clsx('font-display text-[26px] leading-none tracking-[-0.02em]', REVEAL)}>Fintrack</span>
         </div>
         <button
           onClick={() => setQuickOpen(true)}
-          className="group mx-1 mb-7 flex h-11 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_6px_16px_-6px_var(--brand-glow)] transition hover:-translate-y-px hover:brightness-[1.06] cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25"
+          aria-label="Add transaction"
+          className="group mb-7 flex h-11 shrink-0 items-center gap-2 rounded-xl bg-brand px-[18px] text-sm font-semibold text-brand-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_6px_16px_-6px_var(--brand-glow)] transition hover:-translate-y-px hover:brightness-[1.06] cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25"
         >
-          <Plus className="size-4" strokeWidth={2.5} /> Add transaction
-          <kbd className="ml-auto rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">N</kbd>
+          <Plus className="size-4 shrink-0" strokeWidth={2.5} />
+          <span className={REVEAL}>Add transaction</span>
+          <kbd className={clsx('ml-auto rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold', REVEAL)}>N</kbd>
         </button>
         <nav aria-label="Main" className="flex flex-col gap-0.5">
           {NAV.map((n) => (
             <SideLink key={n.to} {...n} />
           ))}
         </nav>
-        <p className="eyebrow mb-2 mt-7 px-3">More</p>
+        <div className="relative mb-2 mt-7 h-4 px-[17px]">
+          <span className="side-divider absolute left-[17px] top-1/2 h-px w-[18px] bg-line-strong transition-opacity duration-200 group-hover/side:opacity-0 group-focus-within/side:opacity-0" aria-hidden="true" />
+          <p className={clsx('eyebrow', REVEAL)}>More</p>
+        </div>
         <nav aria-label="More" className="flex flex-col gap-0.5">
           {MORE.map((n) => (
             <SideLink key={n.to} {...n} />
@@ -121,15 +135,17 @@ export function Layout() {
         </nav>
         <div className="mt-auto space-y-3">
           <SideLink {...SETTINGS} />
-          <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface/70 p-2">
+          <div className="flex w-[240px] shrink-0 items-center gap-2 rounded-2xl border border-transparent p-1 transition-colors duration-200 group-hover/side:border-line group-hover/side:bg-surface/70 group-focus-within/side:border-line group-focus-within/side:bg-surface/70">
             <NavLink to="/settings" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 hover:bg-surface-2">
-              <Avatar name={user?.name ?? '?'} size={34} />
-              <div className="min-w-0">
+              <span className="shrink-0">
+                <Avatar name={user?.name ?? '?'} size={34} />
+              </span>
+              <div className={clsx('min-w-0', REVEAL)}>
                 <p className="truncate text-sm font-semibold">{user?.name}</p>
                 <p className="truncate text-xs text-muted">{user?.email}</p>
               </div>
             </NavLink>
-            <IconButton label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggle}>
+            <IconButton label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggle} className={REVEAL}>
               <ThemeIcon className="size-4" />
             </IconButton>
           </div>
