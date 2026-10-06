@@ -94,11 +94,12 @@ fintrack/
 │                  Reports, insights, projections, goal plans, habit summaries,
 │                  default categories, banks by country, currency conversion.
 ├─ web             React 19 · Vite · Tailwind CSS 4 · Recharts · TanStack Query.
+├─ mobile          iPhone and Android app — Expo · React Native · the same API and @ft/core.
 └─ tests/contract  Black-box HTTP tests for every API endpoint.
 ```
 
-The analytics live in `packages/core` rather than in the UI, so the upcoming mobile app uses the exact same logic and
-the same API. `packages/core` is also the single source of truth for reference data: the backend's `reference.json`
+The analytics live in `packages/core` rather than in the UI, so the mobile app uses the exact same logic and the same
+API. `packages/core` is also the single source of truth for reference data: the backend's `reference.json`
 (countries, currencies, banks, default categories) is generated from it with `npm run export:backend-data`, and a test
 fails if the two drift apart.
 
@@ -154,11 +155,24 @@ The API creates its tables on first start. Optional settings: `ANTHROPIC_API_KEY
 
 ```bash
 npm test                 # Vitest: core and web
+npm test -w mobile       # Jest: the mobile app
 npm run test:backend     # JUnit on an embedded PostgreSQL (or set TEST_DB_URL to use your own)
 npm run test:contract    # API contract tests, with the backend running
 npm run typecheck
 E2E_EMAIL=… E2E_PASSWORD=… CHROME_PATH=/path/to/chrome npm run e2e   # with both dev servers running
 ```
+
+### On your iPhone
+
+With `npm run dev` running, start the mobile app in a second terminal and scan the QR code with the iPhone camera
+(install **Expo Go** from the App Store first; phone and computer on the same Wi-Fi):
+
+```bash
+npm run mobile
+```
+
+The app finds the API on your computer by itself. Details, Windows firewall notes and how to use the deployed API
+instead: [mobile/README.md](mobile/README.md).
 
 In a container, add `CHROME_ARGS=--no-sandbox` to the end-to-end run. PostgreSQL refuses to run as root, so as root
 use `TEST_DB_URL=jdbc:postgresql://localhost:5432/postgres` for the backend tests.
@@ -282,7 +296,8 @@ All routes live under `/api` and speak JSON; everything except auth and FX needs
 
 ## Roadmap
 
-- [ ] Mobile app (Expo / React Native) on the same API and `@ft/core`
+- [x] Mobile app (Expo / React Native) on the same API and `@ft/core`
+- [ ] Mobile app in the App Store and Play Store (EAS Build)
 - [ ] Per-category monthly budgets with alerts
 - [ ] Bank sync via open banking (PSD2)
 - [ ] AI buying suggestions once a goal is reached

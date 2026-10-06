@@ -28,3 +28,8 @@ Thumbs.db
 
 # Local object storage (the stand-in bucket for profile photos)
 .data/
+
+# Mobile build output
+mobile/dist-ios/
+mobile/dist/
+mobile/.expo/
