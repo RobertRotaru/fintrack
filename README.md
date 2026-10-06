@@ -238,13 +238,13 @@ repository, and set:
 | Setting | Value |
 |---|---|
 | Production branch | `main` |
-| Root directory | `web` |
-| Build command | `cd .. && npm ci && npm run build -w web` |
-| Build output directory | `dist` |
+| Root directory | *(leave empty: the repository root)* |
+| Build command | `npm ci -w web && npm run build -w web` |
+| Build output directory | `web/dist` |
 | Environment variables | `API_ORIGIN` = your Heroku Web URL · `NODE_VERSION` = `22` · `SKIP_DEPENDENCY_INSTALL` = `1` |
 
 Pages builds and publishes on every push, at `https://<project>.pages.dev` (add your own domain under **Custom
-domains**). `web/functions/api/[[path]].js` forwards every `/api` request to `API_ORIGIN`, so the web app and the API
+domains**). `functions/api/[[path]].js` forwards every `/api` request to `API_ORIGIN`, so the web app and the API
 share one address, and client-side routes like `/goals` load the app.
 
 Finally, add that `pages.dev` address (or your domain) to the R2 bucket's CORS `AllowedOrigins`
