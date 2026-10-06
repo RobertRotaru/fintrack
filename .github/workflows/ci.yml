@@ -38,6 +38,22 @@ jobs:
           name: backend-test-reports
           path: backend/build/reports/tests
 
+  windows:
+    name: npm scripts on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The scripts reach Gradle through scripts/gradle.mjs (gradlew.bat on Windows).
+      - run: node scripts/gradle.mjs --version
+      - run: node scripts/gradle.mjs compileJava
+
   integration:
     name: API contract & end-to-end (PostgreSQL 17)
     runs-on: ubuntu-latest
