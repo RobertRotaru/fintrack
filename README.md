@@ -179,20 +179,81 @@ use `TEST_DB_URL=jdbc:postgresql://localhost:5432/postgres` for the backend test
 
 ## Deploying
 
-### DigitalOcean App Platform
+Fintrack runs for free on what the [GitHub Student Developer Pack](https://education.github.com/pack) offers:
 
-`.do/app.yaml` describes the whole app: the web app at `/`, the API at `/api` (built from `backend/Dockerfile`) and a
-managed PostgreSQL database, all on one domain and redeployed on every push to `main`.
+| Piece | Where | Cost |
+|---|---|---|
+| API (`backend/Dockerfile`) | **Heroku**, one Basic dyno (always on, 512 MB) | $7/month |
+| PostgreSQL | **Heroku Postgres** Essential-0 (1 GB) | $5/month |
+| Web app | **Cloudflare Pages**, which also forwards `/api` to Heroku | free |
+| Profile photos | **Cloudflare R2** ([Profile photos](#profile-photos)) | free up to 10 GB |
 
-1. In DigitalOcean, **Apps → Create App → Import from app spec**, and upload `.do/app.yaml` (or run
-   `doctl apps create --spec .do/app.yaml`). Allow DigitalOcean to access the GitHub repository when asked.
-2. Under the **api** component's environment variables, set `JWT_SECRET` to a random string of at least 32
-   characters, the `R2_*` values for profile photos (see [Profile photos](#profile-photos)), and
-   `ANTHROPIC_API_KEY` to enable the AI coach. The database variables are already wired up.
-3. Deploy. To use your own domain, add it under **Settings → Domains**; HTTPS is set up automatically.
+The Pack's Heroku offer is **$13 of credit a month for 24 months**, which covers the $12, so it costs nothing for two
+years. Heroku asks for a card when you claim it and charges it only for use above the credit. (No card? The Pack's
+**Azure for Students** offer, $100 a year with no card, can run the same Docker image and a PostgreSQL server.)
 
-The API needs 1 GB of memory; the spec uses the smallest instance that has it, plus a dev database — roughly
-$12 + $7 a month. For backups and failover, point the spec at a managed production cluster instead.
+The API uses about 250 MB at its peak, well within the dyno's 512 MB, once its memory flags are set (step 3).
+
+#### 1. The API and database on Heroku
+
+1. Claim the offer at [heroku.com/github-students](https://www.heroku.com/github-students) with your GitHub account,
+   then install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) and run `heroku login`.
+2. From the repository root, create the app in Europe on the container stack (it builds `backend/Dockerfile`, as
+   `heroku.yml` says) and add the database:
+
+   ```bash
+   heroku create fintrack-yourname --region eu --stack container
+   heroku addons:create heroku-postgresql:essential-0
+   ```
+
+   Heroku sets `DATABASE_URL`; the API reads it on every start (and Heroku may rotate it), so there's nothing to copy.
+3. Set the API's settings. `JWT_SECRET` is any random string of at least 32 characters: `openssl rand -base64 48`,
+   or in PowerShell `[Convert]::ToBase64String((1..48 | % { [byte](Get-Random -Max 256) }))`.
+
+   ```bash
+   heroku config:set JWT_SECRET="…" JAVA_TOOL_OPTIONS="-Xmx256m -Xss512k -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -XX:+UseSerialGC"
+   heroku config:set STORAGE_DRIVER=r2 R2_ACCOUNT_ID="…" R2_BUCKET=fintrack-photos R2_ACCESS_KEY_ID="…" R2_SECRET_ACCESS_KEY="…" R2_PUBLIC_URL="https://…"
+   heroku config:set ANTHROPIC_API_KEY="…"      # optional: the AI coach
+   ```
+
+   Heroku dynos don't tell Java how much memory they have, so `JAVA_TOOL_OPTIONS` sizes it to fit in 512 MB.
+4. Deploy, then make the dyno a Basic one (Eco dynos fall asleep after 30 minutes):
+
+   ```bash
+   git push heroku main
+   heroku ps:type web=basic
+   heroku open /api/health          # {"ok":true}
+   ```
+
+   To deploy on every push to `main` instead, open the app in the Heroku dashboard → **Deploy → GitHub**, connect the
+   repository and **Enable Automatic Deploys**.
+
+Your API's address is the **Web URL** that `heroku info` shows, e.g. `https://fintrack-yourname-1a2b3c.herokuapp.com`.
+
+#### 2. The web app on Cloudflare Pages
+
+In the Cloudflare dashboard (the same account as R2): **Workers & Pages → Create → Pages → Connect to Git**, pick the
+repository, and set:
+
+| Setting | Value |
+|---|---|
+| Production branch | `main` |
+| Root directory | `web` |
+| Build command | `cd .. && npm ci && npm run build -w web` |
+| Build output directory | `dist` |
+| Environment variables | `API_ORIGIN` = your Heroku Web URL · `NODE_VERSION` = `22` · `SKIP_DEPENDENCY_INSTALL` = `1` |
+
+Pages builds and publishes on every push, at `https://<project>.pages.dev` (add your own domain under **Custom
+domains**). `web/functions/api/[[path]].js` forwards every `/api` request to `API_ORIGIN`, so the web app and the API
+share one address, and client-side routes like `/goals` load the app.
+
+Finally, add that `pages.dev` address (or your domain) to the R2 bucket's CORS `AllowedOrigins`
+([Profile photos](#profile-photos), step 3), so browsers may upload photos. The phone app talks to the Heroku URL
+directly: [mobile/README.md](mobile/README.md).
+
+**Limits to know**: Heroku ends a request after 30 seconds, and an AI coach analysis can take longer, so it may
+time out there. Essential-0 has no automatic backups: `heroku pg:backups:capture` takes one, and
+`heroku pg:backups:schedule --at "03:00 Europe/Bucharest"` makes it daily.
 
 ### Anywhere else
 
@@ -201,7 +262,7 @@ docker compose --profile full up --build    # PostgreSQL + the API, with JWT_SEC
 ```
 
 Or build the jar yourself (`npm run build`) and run it with `SPRING_PROFILES_ACTIVE=prod`,
-`DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 characters — in production the API refuses to
+`DB_URL`, `DB_USER`, `DB_PASSWORD` (or a single `DATABASE_URL=postgres://user:pass@host:5432/db`) and a `JWT_SECRET` of at least 32 characters — in production the API refuses to
 start without one. `/actuator/health` (with liveness and readiness probes) is there for load balancers. Serve the web
 app's static build (`npm run build -w web`) from any CDN or web server, with `/api` proxied to the backend.
 
@@ -232,7 +293,7 @@ change and are cached for a year.
    ```json
    [
      {
-       "AllowedOrigins": ["https://your-app.ondigitalocean.app", "http://localhost:5173"],
+       "AllowedOrigins": ["https://fintrack.pages.dev", "http://localhost:5173"],
        "AllowedMethods": ["PUT"],
        "AllowedHeaders": ["content-type", "cache-control"],
        "MaxAgeSeconds": 3600
@@ -242,7 +303,7 @@ change and are cached for a year.
 
 4. **R2 → Manage API tokens → Create API token**: permission **Object Read & Write**, limited to this bucket.
    Copy the **Access Key ID** and **Secret Access Key** (shown once).
-5. Configure the API (in `.env` locally, or as the api component's environment variables on DigitalOcean):
+5. Configure the API (in `.env` locally, or with `heroku config:set` on Heroku):
 
    ```
    STORAGE_DRIVER=r2
@@ -259,7 +320,7 @@ Storage sits behind one small interface, `ObjectStorage` (`presignPut`, `publicU
 implementations: `R2ObjectStorage` (the AWS SDK pointed at R2; any S3-compatible bucket works through
 `R2_ENDPOINT`) and **`local`**, the default, a stand-in bucket on disk (`STORAGE_DIR`, git-ignored `.data/`) that the
 API serves itself at `/api/storage/…` with HMAC-signed links that behave like R2's. `local` is for development and
-tests only: App Platform wipes its disk on every deploy.
+tests only: Heroku wipes a dyno's disk on every deploy and restart.
 
 ### Moving over from the SQLite version
 

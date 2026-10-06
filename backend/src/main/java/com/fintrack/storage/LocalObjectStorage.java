@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  * A stand-in bucket for development and demos: objects are files under {@code fintrack.storage.local-dir},
  * uploaded and served by {@link LocalStorageController}. It mimics S3 presigning — the upload URL carries
  * an expiry, size cap and content type, signed with HMAC — so the browser code is identical to the real thing.
- * Not for production on platforms with an ephemeral disk (App Platform, containers).
+ * Not for production on platforms with an ephemeral disk (Heroku, containers).
  */
 @Component
 @ConditionalOnProperty(name = "fintrack.storage.driver", havingValue = "local", matchIfMissing = true)
