@@ -32,6 +32,10 @@ dependencies {
 
     implementation("com.anthropic:anthropic-java:2.68.0")
 
+    // Profile photos on Cloudflare R2 (S3-compatible): presigned uploads, plus head/range-read/delete.
+    implementation(platform("software.amazon.awssdk:bom:2.55.11"))
+    implementation("software.amazon.awssdk:s3")
+
     // Only used by the one-off SQLite → PostgreSQL import command.
     runtimeOnly("org.xerial:sqlite-jdbc:3.53.4.0")
 

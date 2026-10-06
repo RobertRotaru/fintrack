@@ -386,7 +386,7 @@ describe('navigation shell', () => {
     for (const l of ['Activity', 'Projections', 'Invest']) expect(more).toHaveTextContent(l);
     expect(screen.getAllByRole('link', { name: /settings/i }).some((a) => a.getAttribute('href') === '/settings')).toBe(true);
   });
-  it('desktop sidebar is a collapsed rail that expands on hover or focus, over the page', () => {
+  it('desktop sidebar is a collapsed rail that expands only on hover (or keyboard focus), over the page', () => {
     mockApi({ '/categories': () => empty, '/accounts': () => empty, '/transactions': () => empty });
     const { container } = render(
       <Providers>
@@ -400,11 +400,16 @@ describe('navigation shell', () => {
     const aside = container.querySelector('aside')!;
     expect(aside.className).toMatch(/\bw-\[76px\]/);
     expect(aside.className).toMatch(/hover:w-\[264px\]/);
-    expect(aside.className).toMatch(/focus-within:w-\[264px\]/);
+    // Keyboard focus may open it, but a clicked link must not hold it open after the mouse leaves.
+    expect(aside.className).toMatch(/has-\[:focus-visible\]:w-\[264px\]/);
+    expect(aside.innerHTML + aside.className).not.toMatch(/focus-within/);
     // The page is padded for the rail only, so expanding overlays rather than shifts content.
     expect(container.firstElementChild!.className).toMatch(/lg:pl-\[76px\]/);
     // Labels stay in the accessible tree while collapsed.
     expect(within(aside).getByRole('link', { name: 'Spending' })).toBeInTheDocument();
+    // The person card opens the profile; Settings stays its own link.
+    expect(within(aside).getByRole('link', { name: new RegExp(USER.name) })).toHaveAttribute('href', '/profile');
+    expect(within(aside).getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
   });
 });
 
@@ -557,5 +562,94 @@ describe('goal time left', () => {
     expect(timeLeft('2027-10-15', now)).toBe('1 year left');
     expect(timeLeft('2028-04-15', now)).toBe('1.5 years left');
     expect(timeLeft('2031-10-15', now)).toBe('5 years left');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Profile: its own page, separate from Settings; photos go to object storage.
+
+const { Profile } = await import('../src/pages/Profile');
+const { uploadAvatar } = await import('../src/lib/avatar');
+const { Avatar } = await import('../src/components/ui');
+
+/** jsdom has no canvas or image decoding; give the photo pipeline just enough to run. */
+function stubImagePipeline() {
+  vi.stubGlobal('createImageBitmap', vi.fn(async () => ({ width: 1200, height: 800, close: () => {} })));
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: () => {} } as never);
+  vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (cb, type) {
+    cb(new Blob(['RIFF....WEBP'], { type: type ?? 'image/png' }));
+  });
+}
+
+describe('profile', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('is its own page: photo, name, email and bio, saved together', async () => {
+    const patch = vi.fn((init?: RequestInit) => ({ status: 200, body: { ...USER, ...JSON.parse(String(init?.body)) } }));
+    mockApi({ 'PATCH /auth/me': patch });
+    render(<Providers><Profile /></Providers>);
+    expect(screen.getByRole('heading', { level: 1, name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getByTestId('profile-name')).toHaveTextContent('Test User');
+    expect(screen.getByText(/test@fintrack\.test/)).toBeInTheDocument();
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save).toBeDisabled();
+    fireEvent.change(screen.getByPlaceholderText(/sailboat/), { target: { value: '  Saving for a sailboat.  ' } });
+    expect(screen.getByText(/26\/280/)).toBeInTheDocument();
+    fireEvent.click(save);
+    await waitFor(() => expect(patch).toHaveBeenCalled());
+    expect(JSON.parse(String(patch.mock.calls[0][0]?.body))).toEqual({ name: 'Test User', bio: 'Saving for a sailboat.' });
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
+  it('uploads a photo straight to storage with a signed link, then saves only the key', async () => {
+    stubImagePipeline();
+    const signed = '/api/storage/avatars/u1/abc.webp?ct=image%2Fwebp&max=2000000&exp=9&sig=s';
+    const fetchMock = mockApi({
+      'POST /me/avatar/uploads': () => ({ status: 201, body: { key: 'avatars/u1/abc.webp', upload: { method: 'PUT', url: signed, headers: { 'Content-Type': 'image/webp' }, maxBytes: 2e6, expiresAt: '' } } }),
+      'PUT /storage/avatars/u1/abc.webp': () => ({ status: 200 }),
+      'PUT /me/avatar': () => ({ status: 200, body: { ...USER, avatarUrl: '/api/storage/avatars/u1/abc.webp' } }),
+    });
+    localStorage.setItem('ft.token', 'tok');
+    const user = await uploadAvatar(new File(['x'], 'me.jpg', { type: 'image/jpeg' }));
+    expect(user.avatarUrl).toBe('/api/storage/avatars/u1/abc.webp');
+
+    const calls = fetchMock.mock.calls.map(([url, init]) => ({ url: String(url), method: init?.method, headers: (init?.headers ?? {}) as Record<string, string>, body: init?.body }));
+    expect(calls.map((c) => `${c.method} ${c.url.split('?')[0]}`)).toEqual(['POST /api/me/avatar/uploads', 'PUT /api/storage/avatars/u1/abc.webp', 'PUT /api/me/avatar']);
+    expect(JSON.parse(String(calls[0].body))).toMatchObject({ contentType: 'image/webp' });
+    // The file goes to storage as raw bytes, without the session token; the API only ever sees the key.
+    expect(calls[1].url).toBe(signed);
+    expect(calls[1].body).toBeInstanceOf(Blob);
+    expect(Object.keys(calls[1].headers).map((h) => h.toLowerCase())).not.toContain('authorization');
+    expect(JSON.parse(String(calls[2].body))).toEqual({ key: 'avatars/u1/abc.webp' });
+  });
+
+  it('a failed storage upload is reported and never saved to the profile', async () => {
+    stubImagePipeline();
+    const save = vi.fn(() => ({ status: 200, body: USER }));
+    mockApi({
+      'POST /me/avatar/uploads': () => ({ status: 201, body: { key: 'avatars/u1/abc.webp', upload: { method: 'PUT', url: '/api/storage/avatars/u1/abc.webp', headers: {}, maxBytes: 1, expiresAt: '' } } }),
+      'PUT /storage/avatars/u1/abc.webp': () => ({ status: 403 }),
+      'PUT /me/avatar': save,
+    });
+    await expect(uploadAvatar(new File(['x'], 'me.png', { type: 'image/png' }))).rejects.toThrow(/didn’t upload/);
+    expect(save).not.toHaveBeenCalled();
+    await expect(uploadAvatar(new File(['x'], 'notes.txt', { type: 'text/plain' }))).rejects.toThrow(/isn’t an image/);
+  });
+
+  it('shows the photo instead of initials when there is one', () => {
+    const { container } = render(<Avatar name="Ana Pop" src="/api/storage/avatars/a.webp" size={40} />);
+    expect(container.querySelector('img')).toHaveAttribute('src', '/api/storage/avatars/a.webp');
+    cleanup();
+    render(<Avatar name="Ana Pop" size={40} />);
+    expect(screen.getByText('AP')).toBeInTheDocument();
+  });
+
+  it('Settings keeps preferences only and links to the profile', () => {
+    mockApi({ '/categories': () => empty, '/accounts': () => empty, '/fx': () => ({ status: 200, body: { base: 'EUR', rates: {} } }) });
+    render(<Providers><Settings /></Providers>);
+    expect(screen.queryByText('Name')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /sign out/i })).not.toBeInTheDocument();
+    expect(screen.getByText('Preferences')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /edit your profile/i })).toHaveAttribute('href', '/profile');
   });
 });

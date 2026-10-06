@@ -78,7 +78,17 @@ class LegacyImportTest extends PostgresTest {
             String token = api.login(creds.get("email").stringValue(), creds.get("password").stringValue());
             for (var e : endpoints.entrySet()) {
                 JsonNode expected = canonical(snapshot.get(who).get(e.getKey()));
-                JsonNode actual = canonical(api.get(e.getValue(), token).json());
+                JsonNode live = api.get(e.getValue(), token).json();
+                if (e.getKey().equals("me")) {
+                    // Fields added after the Node server (profile bio and photo) start out empty for imported people.
+                    assertThat(live.get("bio").stringValue()).as(who + " bio").isEmpty();
+                    assertThat(live.get("avatarUrl").isNull()).as(who + " avatarUrl").isTrue();
+                    ((tools.jackson.databind.node.ObjectNode) live).remove(List.of("bio", "avatarUrl"));
+                }
+                if (e.getKey().equals("household") && live.has("members")) {
+                    for (JsonNode m : live.get("members")) ((tools.jackson.databind.node.ObjectNode) m).remove(List.of("bio", "avatarUrl"));
+                }
+                JsonNode actual = canonical(live);
                 assertThat(actual).as(who + " " + e.getValue()).isEqualTo(expected);
             }
         }

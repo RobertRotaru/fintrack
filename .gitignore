@@ -25,3 +25,6 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Local object storage (the stand-in bucket for profile photos)
+.data/

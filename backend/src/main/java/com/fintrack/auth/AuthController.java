@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    static final int BIO_MAX = 280;
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final AuthService auth;
@@ -62,8 +63,9 @@ public class AuthController {
     public Views.User update(@AuthenticationPrincipal UUID me, Body b) {
         // Validate every field first so a bad one doesn't leave the others half-saved.
         String name = b.has("name") ? b.str("name", "Name", 80) : null;
+        String bio = b.has("bio") ? b.optStr("bio", "Bio", BIO_MAX) : null;
         String country = b.has("country") ? b.oneOf("country", "Country", ref.countryCodes()) : null;
         String currency = b.has("baseCurrency") ? b.oneOf("baseCurrency", "Currency", ref.currencyCodes()) : null;
-        return auth.update(me, name, country, currency);
+        return auth.update(me, name, bio, country, currency);
     }
 }

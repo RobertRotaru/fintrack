@@ -640,3 +640,51 @@ describe('demo & ai', () => {
     expect((await post('/api/ai/investment', {}, token)).status).toBe(400);
   });
 });
+
+describe('profile', () => {
+  // A minimal WebP header: enough for the storage's "is this really an image" check.
+  const WEBP = new Uint8Array([82, 73, 70, 70, 20, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 32, 1, 2, 3, 4]);
+
+  it('bio is saved with the profile and capped at 280 characters', async () => {
+    const { token } = await register();
+    expect((await get('/api/auth/me', token)).body).toMatchObject({ bio: '', avatarUrl: null });
+    expect((await patch('/api/auth/me', { bio: ' Saving for a sailboat. ' }, token)).body.bio).toBe('Saving for a sailboat.');
+    expect((await patch('/api/auth/me', { bio: 'x'.repeat(281) }, token)).status).toBe(400);
+  });
+
+  it('a photo goes to storage with a signed link; the profile keeps only its URL', async () => {
+    const { token } = await register();
+    const ticket = await post('/api/me/avatar/uploads', { contentType: 'image/webp', size: WEBP.length }, token);
+    expect(ticket.status).toBe(201);
+    const { key, upload } = ticket.body;
+    expect(upload.method).toBe('PUT');
+    // Not uploaded yet: refused.
+    expect((await call('PUT', '/api/me/avatar', { key }, token)).status).toBe(400);
+    // The signature pins the type and size: a different type or a tampered link is refused
+    // (400 from the local bucket, 403 from R2).
+    const headers = (type: string) => ({ ...upload.headers, 'Content-Type': type });
+    const put = (url: string, type: string) => fetch(url.startsWith('http') ? url : base + url, { method: 'PUT', headers: headers(type), body: WEBP });
+    expect((await put(upload.url, 'image/png')).status).toBeGreaterThanOrEqual(400);
+    expect((await put(upload.url.replace(/(sig|X-Amz-Signature)=[0-9a-f]+/, '$1=00'), 'image/webp')).status).toBeGreaterThanOrEqual(400);
+    // The signed link works without a session, exactly as a browser sends it.
+    expect((await put(upload.url, 'image/webp')).status).toBe(200);
+    const me = await call('PUT', '/api/me/avatar', { key }, token);
+    expect(me.status).toBe(200);
+    const photo = (url: string) => (url.startsWith('http') ? url : base + url);
+    const served = await fetch(photo(me.body.avatarUrl));
+    expect(served.status).toBe(200);
+    expect(served.headers.get('content-type')).toBe('image/webp');
+    expect(new Uint8Array(await served.arrayBuffer())).toEqual(WEBP);
+    // Removing it deletes the object too.
+    expect((await del('/api/me/avatar', token)).body.avatarUrl).toBeNull();
+    expect((await fetch(photo(me.body.avatarUrl))).status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('photo endpoints need a session and only accept images', async () => {
+    const { token } = await register();
+    expect((await post('/api/me/avatar/uploads', { contentType: 'image/webp', size: 10 })).status).toBe(401);
+    expect((await post('/api/me/avatar/uploads', { contentType: 'image/webp' }, token)).status).toBe(400); // size is signed in, so required
+    expect((await post('/api/me/avatar/uploads', { contentType: 'image/svg+xml' }, token)).status).toBe(400);
+    expect((await post('/api/me/avatar/uploads', { contentType: 'image/webp', size: 5_000_000 }, token)).status).toBe(400);
+  });
+});

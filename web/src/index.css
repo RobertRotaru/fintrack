@@ -426,25 +426,6 @@ h2,
 :is(.page-enter > * > *, .stagger > *):nth-child(7) { --i: 6; }
 :is(.page-enter > * > *, .stagger > *):nth-child(n + 8) { --i: 7; }
 
-/*
- * The desktop sidebar is a rail that opens on hover. Touch screens at desktop
- * width can't hover, so there it simply stays open.
- */
-@media (hover: none) and (min-width: 64rem) {
-  .shell {
-    padding-left: 264px;
-  }
-  .side-rail {
-    width: 264px;
-  }
-  .side-rail .side-reveal {
-    opacity: 1;
-  }
-  .side-rail .side-divider {
-    opacity: 0;
-  }
-}
-
 /* A slow, drifting wash of colour behind every page. */
 .ambient > span {
   position: absolute;

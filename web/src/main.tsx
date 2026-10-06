@@ -28,6 +28,7 @@ const Goals = page(() => import('./pages/Goals'), 'Goals');
 const Invest = page(() => import('./pages/Invest'), 'Invest');
 const Family = page(() => import('./pages/Family'), 'Family');
 const Settings = page(() => import('./pages/Settings'), 'Settings');
+const Profile = page(() => import('./pages/Profile'), 'Profile');
 
 const queryClient = new QueryClient({
   // Every failed write surfaces its server message, including fire-and-forget ones.
@@ -63,6 +64,7 @@ function App() {
         <Route path="invest" element={<Invest />} />
         <Route path="family" element={<Family />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

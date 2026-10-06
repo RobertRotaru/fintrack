@@ -8,7 +8,8 @@ import java.util.UUID;
 public final class Views {
     private Views() {}
 
-    public record User(UUID id, String email, String name, String baseCurrency, String country, String createdAt) {}
+    /** {@code avatarUrl} is where the photo can be fetched (object storage), null without one. */
+    public record User(UUID id, String email, String name, String baseCurrency, String country, String createdAt, String bio, String avatarUrl) {}
 
     public record Account(UUID id, UUID ownerId, UUID householdId, String type, String name, String institutionId, String institutionName,
             String country, String currency, String color, String icon, String image, BigDecimal initialBalance, BigDecimal creditLimit,
@@ -27,7 +28,7 @@ public final class Views {
     public record Goal(UUID id, UUID userId, UUID householdId, String name, BigDecimal targetAmount, String currency, String deadline, String icon,
             String color, String image, String createdAt, String completedAt, BigDecimal saved, List<Contribution> contributions) {}
 
-    public record Member(UUID userId, String name, String email, String role, String joinedAt) {}
+    public record Member(UUID userId, String name, String email, String role, String joinedAt, String bio, String avatarUrl) {}
 
     public record Household(UUID id, String name, String inviteCode, UUID createdBy, String createdAt, List<Member> members) {}
 }
